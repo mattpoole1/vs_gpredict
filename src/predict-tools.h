@@ -33,6 +33,14 @@
 #include "sat-vis.h"
 #include "sgpsdp/sgp4sdp4.h"
 
+/** \brief Brief manual pass info .*/
+typedef struct {
+    gdouble   az;
+    gdouble   el;
+    gdouble   start;
+    gdouble   end;
+} schedule_t;
+
 
 /** \brief Brief satellite pass info. */
 typedef struct {
@@ -104,6 +112,13 @@ pass_t *get_pass_no_min_el (sat_t *sat, qth_t *qth, gdouble start, gdouble maxdt
 pass_t        *copy_pass         (pass_t *pass);
 GSList        *copy_pass_details (GSList *details);
 pass_detail_t *copy_pass_detail  (pass_detail_t *detail);
+
+/* manual pass */
+gdouble sched_last_time (gchar *filename);
+gdouble sched_update_az (gchar *filename, gdouble t);
+gdouble sched_update_el (gchar *filename, gdouble t);
+gdouble sched_v_az       (gchar *filename, gdouble t);
+schedule_t *get_schedule (gchar *filename);
 
 /* memory cleaning */
 void free_pass         (pass_t *pass);

@@ -147,7 +147,7 @@ am_gpredict_OBJECTS = nxjson/nxjson.$(OBJEXT) \
 	sat-pref-single-pass.$(OBJEXT) \
 	sat-pref-sky-at-glance.$(OBJEXT) sat-vis.$(OBJEXT) \
 	save-pass.$(OBJEXT) time-tools.$(OBJEXT) tle-tools.$(OBJEXT) \
-	tle-update.$(OBJEXT) strnatcmp.$(OBJEXT)
+	tle-update.$(OBJEXT) strnatcmp.$(OBJEXT) 
 gpredict_OBJECTS = $(am_gpredict_OBJECTS)
 gpredict_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_$(V))
@@ -510,7 +510,7 @@ gpredict_SOURCES = \
     time-tools.c time-tools.h \
     tle-tools.c tle-tools.h \
     tle-update.c tle-update.h \
-    strnatcmp.c strnatcmp.h
+    strnatcmp.c strnatcmp.h 
 
 gpredict_LDADD = 
 all: all-recursive

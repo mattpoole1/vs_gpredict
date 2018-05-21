@@ -46,6 +46,10 @@ struct _gtk_rot_ctrl {
     GtkWidget      *MonitorCheckBox;
     GtkWidget      *track;
     GtkWidget      *calibrate;
+    GtkWidget      *load;
+    GtkWidget      *read;
+    GtkWidget      *fileLabel;
+    GtkWidget      *launchTimer;
 
     rotor_conf_t   *conf;
     gdouble         t;          /*!< Time when sat data last has been updated. */
@@ -55,6 +59,8 @@ struct _gtk_rot_ctrl {
     sat_t          *target;     /*!< Target satellite */
     pass_t         *pass;       /*!< Next pass of target satellite */
     qth_t          *qth;        /*!< The QTH for this module */
+    schedule_t     *sched;      /*!< Manual pass with time, az, el from a csv */
+    char           *filename;   /*!< The filename from which to read Az / El data */
     gboolean        flipped;    /*!< Whether the current pass loaded is a flip pass or not */
 
     guint           delay;      /*!< Timeout delay. */
@@ -65,6 +71,7 @@ struct _gtk_rot_ctrl {
     gboolean        monitor;    /*!< Flag indicating that rig is in monitor mode. */
     gboolean        engaged;    /*!< Flag indicating that rotor device is engaged. */
     gboolean        calibrating;/*!< Flag indicating that rotor device is calibrating. */
+    gboolean        reading;    /*!< Flag indicating that the rotor is being controlled from file data. */
 
     gint            errcnt;     /*!< Error counter. */
 

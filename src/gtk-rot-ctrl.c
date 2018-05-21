@@ -55,6 +55,7 @@
 #include "gtk-rot-ctrl.h"
 #include "predict-tools.h"
 #include "sat-log.h"
+#include "time-tools.h"
 
 
 #define FMTSTR "%7.2f\302\260"
@@ -293,7 +294,6 @@ static inline void set_flipped_pass(GtkRotCtrl * ctrl)
  * Read rotator state from device and update ctrl->calibrating.
  *
  * \param ctrl Pointer to the GtkRotCtrl widget.
- * \param az The current State as read from the device
  * \return TRUE if the state was successfully retrieved, FALSE if an
  *         error occurred.
  */
@@ -818,23 +818,76 @@ static void track_toggle_cb(GtkToggleButton * button, gpointer data)
  * \param button Pointer to the Gtk button.
  * \param data Pointer to the GtkRotCtrl widget.
  */
-static void calibrate_click_cb(GtkButton * button, gpointer data)
+static void calibrate_toggle_cb(GtkButton * button, gpointer data)
 {
     GtkRotCtrl     *ctrl = GTK_ROT_CTRL(data);
     gboolean        retcode;
     
     
-    ctrl->calibrating = TRUE;
-    retcode = set_cal(ctrl);
-
-    while (ctrl->calibrating) 
-    {
-        retcode = (retcode && get_state(ctrl));
-        
+    ctrl->calibrating = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
+    gtk_widget_set_sensitive(ctrl->calibrate, !ctrl->calibrating);
+    gtk_widget_set_sensitive(ctrl->AzSet, !ctrl->calibrating);
+    gtk_widget_set_sensitive(ctrl->ElSet, !ctrl->calibrating);
+    gtk_widget_set_sensitive(ctrl->read, !ctrl->calibrating);
+    gtk_widget_set_sensitive(ctrl->track, !ctrl->calibrating);
+    gtk_widget_set_sensitive(ctrl->MonitorCheckBox, !ctrl->calibrating);
+    if (ctrl->calibrating) {
+        retcode = set_cal(ctrl);
     }
+}
+
+/**
+ * Manage click signals (load button)
+ * 
+ * \param button Pointer to the Gtk button.
+ * \param data Pointer to the GtkRotCtrl widget.
+ */
+static void load_click_cb(GtkButton * button, gpointer data)
+{
+    GtkRotCtrl     *ctrl = GTK_ROT_CTRL (data);
+    gboolean        retcode;
+    GtkWidget      *dialog;
+    GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_OPEN;
+    gint            res;
+
+    dialog = gtk_file_chooser_dialog_new("Load File", NULL, action, _("_Cancel"), GTK_RESPONSE_CANCEL, _("_Open"), GTK_RESPONSE_ACCEPT, NULL);
+
+    res = gtk_dialog_run(GTK_DIALOG(dialog));
+    if (res == GTK_RESPONSE_ACCEPT) {
+        GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
+        ctrl->filename = gtk_file_chooser_get_filename (chooser);
+    }
+    gtk_widget_destroy(dialog);
+    
+    gtk_label_set_text(GTK_LABEL(ctrl->fileLabel), _(ctrl->filename));
+    gtk_widget_set_sensitive(ctrl->read, TRUE);
 
 }
 
+/**
+ * Manage toggle signals (read button)
+ * 
+ * \param button Pointer to the Gtk button.
+ * \param data Pointer to the GtkRotCtrl widget.
+ */
+static void read_toggle_cb(GtkButton * button, gpointer data)
+{
+    GtkRotCtrl     *ctrl = GTK_ROT_CTRL(data);
+    ctrl->sched = get_schedule(ctrl->filename);
+    //Test stuff 
+    char name[1024];
+    sprintf(name, "%f %f %f", ctrl->sched->end, ctrl->sched->az, ctrl->sched->el);
+    gtk_label_set_text(GTK_LABEL(ctrl->fileLabel), _(name));
+
+    ctrl->reading = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
+    gtk_widget_set_sensitive(ctrl->AzSet, !ctrl->reading);
+    gtk_widget_set_sensitive(ctrl->ElSet, !ctrl->reading);
+    gtk_widget_set_sensitive(ctrl->calibrate, !ctrl->reading);
+    gtk_widget_set_sensitive(ctrl->track, !ctrl->reading);
+    gtk_widget_set_sensitive(ctrl->MonitorCheckBox, !ctrl->reading);
+    gtk_widget_set_sensitive(ctrl->load, !ctrl->reading);   
+
+}
 
 /**
  * Rotator controller timeout function
@@ -854,6 +907,10 @@ static gboolean rot_ctrl_timeout_cb(gpointer data)
     /* parameters for path predictions */
     gdouble         time_delta;
     gdouble         step_size;
+
+    /* parameters for reading from csv */
+    gdouble         time_now;
+    gdouble         mission_secs;
 
 
     /* If we are tracking and the target satellite is within
@@ -910,7 +967,28 @@ static gboolean rot_ctrl_timeout_cb(gpointer data)
             gtk_rot_knob_set_value(GTK_ROT_KNOB(ctrl->ElSet), setel);
         }
 
-    }
+    } else if (ctrl->reading) {
+        time_now = get_current_daynum();
+        mission_secs = fmod(time_now-ctrl->sched->start, 1) * 86400;
+        setaz = sched_update_az(ctrl->filename, mission_secs);
+        setel = sched_update_el(ctrl->filename, mission_secs);
+        text = g_strdup_printf("%.0fs", mission_secs);
+        gtk_label_set_text(GTK_LABEL(ctrl->launchTimer), text);
+        g_free(text);
+
+    } else if (ctrl->calibrating) {
+        error = !get_state(ctrl);
+        if (!ctrl->calibrating) {
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->calibrate),
+                                             FALSE);
+            gtk_widget_set_sensitive(ctrl->calibrate, !ctrl->calibrating);
+            gtk_widget_set_sensitive(ctrl->AzSet, !ctrl->calibrating);
+            gtk_widget_set_sensitive(ctrl->ElSet, !ctrl->calibrating);
+            gtk_widget_set_sensitive(ctrl->read, !ctrl->calibrating);
+            gtk_widget_set_sensitive(ctrl->track, !ctrl->calibrating);
+            gtk_widget_set_sensitive(ctrl->MonitorCheckBox, !ctrl->calibrating);
+        }
+    }              
     else
     {
         setaz = gtk_rot_knob_get_value(GTK_ROT_KNOB(ctrl->AzSet));
@@ -1041,12 +1119,15 @@ static gboolean rot_ctrl_timeout_cb(gpointer data)
 
                     setaz = sat->az;
                 }
-            }
+            } 
 
             /* send controller values to rotator device */
             /* this is the newly computed value which should be ahead of the current position */
+
+            if (!ctrl->calibrating) {
             gtk_rot_knob_set_value(GTK_ROT_KNOB(ctrl->AzSet), setaz);
             gtk_rot_knob_set_value(GTK_ROT_KNOB(ctrl->ElSet), setel);
+            }
             if (g_mutex_trylock(&ctrl->client.mutex))
             {
                 ctrl->client.azi_out = setaz;
@@ -1237,6 +1318,8 @@ static void rot_monitor_cb(GtkCheckButton * button, gpointer data)
     gtk_widget_set_sensitive(ctrl->ElSet, !ctrl->monitor);
     gtk_widget_set_sensitive(ctrl->track, !ctrl->monitor);
     gtk_widget_set_sensitive(ctrl->calibrate, !ctrl->monitor);
+    gtk_widget_set_sensitive(ctrl->read, !ctrl->monitor);
+    gtk_widget_set_sensitive(ctrl->load, !ctrl->monitor);
 }
 
 /**
@@ -1368,6 +1451,7 @@ static GtkWidget *create_target_widgets(GtkRotCtrl * ctrl)
     guint           i, n;
     sat_t          *sat = NULL;
 
+
     buff = g_strdup_printf(FMTSTR, 0.0);
 
     table = gtk_grid_new();
@@ -1430,14 +1514,57 @@ static GtkWidget *create_target_widgets(GtkRotCtrl * ctrl)
 
 
     /* calibration button */
-    ctrl->calibrate = gtk_button_new_with_label(_("Calibrate"));
+    ctrl->calibrate = gtk_toggle_button_new_with_label(_("Calibrate"));
     gtk_widget_set_tooltip_text(ctrl->calibrate,
                                 _
                                 ("Calibrate the rotator"));
-    gtk_grid_attach(GTK_GRID(table), ctrl->calibrate, 0, 4, 3, 1);
+    gtk_grid_attach(GTK_GRID(table), ctrl->calibrate, 1, 7, 2, 1);
     gtk_widget_set_sensitive(ctrl->calibrate, FALSE);
-    g_signal_connect(ctrl->calibrate, "clicked", G_CALLBACK(calibrate_click_cb),
+    g_signal_connect(ctrl->calibrate, "clicked", G_CALLBACK(calibrate_toggle_cb),
                      ctrl);
+
+    /* Launch Timer */
+    label = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(label), _("Launch: T+"));
+    g_object_set(label, "xalign", 1.0f, "yalign", 0.5f, NULL);
+    gtk_grid_attach(GTK_GRID(table), label, 0, 4, 1, 1);
+
+    ctrl->launchTimer = gtk_label_new("---");
+    gtk_label_set_width_chars(GTK_LABEL(ctrl->launchTimer), 6);
+    g_object_set(ctrl->launchTimer, "xalign", 0.0f, "yalign", 0.5f, NULL);
+    gtk_grid_attach(GTK_GRID(table), ctrl->launchTimer, 1, 4, 1, 1);
+
+
+    /* Load File Button */
+    ctrl->load = gtk_button_new_with_label(_("Load File"));
+    gtk_widget_set_tooltip_text(ctrl->load,
+                                _
+                                ("Load a csv file to control rotator"));
+    gtk_grid_attach(GTK_GRID(table), ctrl->load, 0, 5, 1, 1);
+    gtk_widget_set_sensitive(ctrl->load, TRUE);
+    g_signal_connect(ctrl->load, "clicked", G_CALLBACK(load_click_cb),
+                     ctrl);
+
+    label = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(label), _("Filename:"));
+    g_object_set(label, "xalign", 1.0f, "yalign", 0.5f, NULL);
+    gtk_grid_attach(GTK_GRID(table), label, 1, 5, 1, 1);
+
+    ctrl->fileLabel = gtk_label_new(" --- ");
+    gtk_label_set_width_chars(GTK_LABEL(ctrl->fileLabel), 6);
+    g_object_set(ctrl->fileLabel, "xalign", 0.0f, "yalign", 0.5f, NULL);
+    gtk_grid_attach(GTK_GRID(table), ctrl->fileLabel, 2, 5, 1, 1);
+
+    /* Read File to controller button */
+    ctrl->read = gtk_toggle_button_new_with_label(_("Read"));
+    gtk_widget_set_tooltip_text(ctrl->track,
+                                _
+                                ("Read Az / El data given in csv file to controller"));
+    gtk_grid_attach(GTK_GRID(table), ctrl->read, 0, 7, 1, 1);
+    g_signal_connect(ctrl->read, "toggled", G_CALLBACK(read_toggle_cb),
+                     ctrl); 
+    gtk_widget_set_sensitive(ctrl->read, FALSE);
+
 
     frame = gtk_frame_new(_("Target"));
     gtk_container_add(GTK_CONTAINER(frame), table);
@@ -1659,10 +1786,13 @@ static void gtk_rot_ctrl_init(GtkRotCtrl * ctrl)
     ctrl->sats = NULL;
     ctrl->target = NULL;
     ctrl->pass = NULL;
+    ctrl->sched = NULL;
     ctrl->qth = NULL;
     ctrl->plot = NULL;
+    ctrl->filename = NULL;
 
     ctrl->tracking = FALSE;
+    ctrl->reading = FALSE;
     ctrl->calibrating = FALSE;
     ctrl->engaged = FALSE;
     ctrl->delay = 1000;
