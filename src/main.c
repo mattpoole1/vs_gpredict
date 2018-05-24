@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
     //sat_debugger_run ();
 
     /* launch TLE monitoring task; 10 min interval */
-    tle_mon_id = g_timeout_add(600000, tle_mon_task, NULL);
+    tle_mon_id = g_timeout_add(30000, tle_mon_task, NULL);
 
 #ifdef WIN32
     // Initializing Windozze Sockets
@@ -419,6 +419,11 @@ static gboolean tle_mon_task(gpointer data)
                     __func__);
     }
 
+    sat_log_log(SAT_LOG_LEVEL_WARN,
+                    _
+                    ("%s: Performing TLE Update.\n"),
+                    __func__);
+
     /* get time of last update */
     last = sat_cfg_get_int(SAT_CFG_INT_TLE_LAST_UPDATE);
 
@@ -438,7 +443,7 @@ static gboolean tle_mon_task(gpointer data)
         break;
 
     case TLE_AUTO_UPDATE_DAILY:
-        thrld = 86400;
+        thrld = 10;
         break;
 
         /* set default to "infinite" */
@@ -457,9 +462,10 @@ static gboolean tle_mon_task(gpointer data)
     else
     {
         /* time to update */
-        sat_log_log(SAT_LOG_LEVEL_DEBUG,
+        sat_log_log(SAT_LOG_LEVEL_WARN,
                     _("%s: Time threshold has been passed."), __func__);
-
+        /* Reload sats */
+        mod_mgr_reload_sats();
         /* find out what to do */
         if (sat_cfg_get_int(SAT_CFG_INT_TLE_AUTO_UPD_ACTION) ==
             TLE_AUTO_UPDATE_GOAHEAD)

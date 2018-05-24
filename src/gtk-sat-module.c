@@ -391,6 +391,149 @@ static void create_module_layout(GtkSatModule * module)
     gtk_box_pack_start(GTK_BOX(module), table, TRUE, TRUE, 0);
 }
 
+/**
+ * Read moule configuration data.
+ *
+ * @param module The GtkSatModule to which the configuration will be applied.
+ * @param cfgfile The configuration file.
+ */
+static void gtk_sat_module_read_cfg_data(GtkSatModule * module,
+                                         const gchar * cfgfile)
+{
+    gchar          *buffer = NULL;
+    gchar          *qthfile;
+    gchar          *confdir;
+    gchar         **buffv;
+    guint           length, i;
+    GError         *error = NULL;
+
+    module->cfgdata = g_key_file_new();
+    g_key_file_set_list_separator(module->cfgdata, ';');
+
+    /* Bail out with error message if data can not be read */
+    if (!g_key_file_load_from_file(module->cfgdata, cfgfile,
+                                   G_KEY_FILE_KEEP_COMMENTS, &error))
+    {
+        g_key_file_free(module->cfgdata);
+        module->cfgdata = NULL;
+        sat_log_log(SAT_LOG_LEVEL_ERROR,
+                    _("%s: Could not load config data from %s (%s)."),
+                    __func__, cfgfile, error->message);
+
+        g_clear_error(&error);
+
+        return;
+    }
+
+    /* debug message */
+    sat_log_log(SAT_LOG_LEVEL_DEBUG,
+                _("%s: Reading configuration from %s"), __func__, cfgfile);
+
+    /* set module name */
+    buffer = g_path_get_basename(cfgfile);
+    buffv = g_strsplit(buffer, ".mod", 0);
+    module->name = g_strdup(buffv[0]);
+    g_free(buffer);
+    g_strfreev(buffv);
+
+    /* get qth file */
+    buffer = mod_cfg_get_str(module->cfgdata,
+                             MOD_CFG_GLOBAL_SECTION,
+                             MOD_CFG_QTH_FILE_KEY, SAT_CFG_STR_DEF_QTH);
+
+    confdir = get_user_conf_dir();
+    qthfile = g_strconcat(confdir, G_DIR_SEPARATOR_S, buffer, NULL);
+
+    /* load QTH data */
+    if (!qth_data_read(qthfile, module->qth))
+    {
+        /* QTH file was not found for some reason */
+        g_free(buffer);
+        g_free(qthfile);
+
+        /* remove cfg key */
+        g_key_file_remove_key(module->cfgdata,
+                              MOD_CFG_GLOBAL_SECTION,
+                              MOD_CFG_QTH_FILE_KEY, NULL);
+
+        /* save modified cfg data to file */
+        mod_cfg_save(module->name, module->cfgdata);
+
+        /* try SAT_CFG_STR_DEF_QTH */
+        buffer = sat_cfg_get_str(SAT_CFG_STR_DEF_QTH);
+        qthfile = g_strconcat(confdir, G_DIR_SEPARATOR_S, buffer, NULL);
+
+        if (!qth_data_read(qthfile, module->qth))
+        {
+            sat_log_log(SAT_LOG_LEVEL_ERROR,
+                        _
+                        ("%s: Can not load default QTH file %s; using built-in defaults"),
+                        __func__, buffer);
+
+            /* settings are really screwed up; we need some safe values here */
+            qth_safe(module->qth);
+        }
+    }
+
+    g_free(buffer);
+    g_free(confdir);
+    g_free(qthfile);
+
+    /* get timeout value */
+    module->timeout = mod_cfg_get_int(module->cfgdata,
+                                      MOD_CFG_GLOBAL_SECTION,
+                                      MOD_CFG_TIMEOUT_KEY,
+                                      SAT_CFG_INT_MODULE_TIMEOUT);
+
+    /* get grid layout configuration (introduced in 1.2) */
+    buffer = mod_cfg_get_str(module->cfgdata,
+                             MOD_CFG_GLOBAL_SECTION,
+                             MOD_CFG_GRID, SAT_CFG_STR_MODULE_GRID);
+
+    /* convert to an integer list */
+    buffv = g_strsplit(buffer, ";", 0);
+    length = g_strv_length(buffv);
+    if ((length == 0) || (length % 5 != 0))
+    {
+        /* the grid configuration is bogus; override with global default */
+        sat_log_log(SAT_LOG_LEVEL_ERROR,
+                    _("%s: Module layout is invalid: %s. Using default."),
+                    __func__, buffer);
+        g_free(buffer);
+        g_strfreev(buffv);
+
+        buffer = sat_cfg_get_str_def(SAT_CFG_STR_MODULE_GRID);
+        buffv = g_strsplit(buffer, ";", 0);
+        length = g_strv_length(buffv);
+    }
+
+    /* make a debug log entry */
+    sat_log_log(SAT_LOG_LEVEL_DEBUG,
+                _("%s: GRID(%d): %s"), __func__, length, buffer);
+    g_free(buffer);
+
+    /* number of views: we have five numbers per view (type,left,right,top,bottom) */
+    module->nviews = length / 5;
+    module->grid = g_try_new0(guint, length);
+
+    /* if we cannot allocate memory for the grid zero the views out and log */
+    if (module->grid != NULL)
+    {
+        /* convert chars to integers */
+        for (i = 0; i < length; i++)
+        {
+            module->grid[i] = (gint) g_ascii_strtoll(buffv[i], NULL, 0);
+            //g_print ("%d: %s => %d\n", i, buffv[i], module->grid[i]);
+        }
+    }
+    else
+    {
+        module->nviews = 0;
+        sat_log_log(SAT_LOG_LEVEL_ERROR,
+                    _("%s: Unable to allocate memory for grid."), __func__);
+    }
+    g_strfreev(buffv);
+}
 
 /**
  * Read satellites into memory.
@@ -407,6 +550,15 @@ static void gtk_sat_module_load_sats(GtkSatModule * module)
     sat_t          *sat;
     guint          *key = NULL;
     guint           succ = 0;
+    gchar          *name;
+    gchar          *confdir;
+    gchar          *cfgfile;
+    
+
+    name = strdup(module->name);
+    confdir = get_modules_dir();
+    cfgfile = g_strconcat(confdir, G_DIR_SEPARATOR_S, name, ".mod", NULL);
+    gtk_sat_module_read_cfg_data(module, cfgfile);
 
     /* get list of satellites from config file; abort in case of error */
     sats = g_key_file_get_integer_list(module->cfgdata,
@@ -457,7 +609,7 @@ static void gtk_sat_module_load_sats(GtkSatModule * module)
                 gtk_sat_data_init_sat(sat, module->qth);
                 g_hash_table_insert(module->satellites, key, sat);
                 succ++;
-                sat_log_log(SAT_LOG_LEVEL_DEBUG,
+                sat_log_log(SAT_LOG_LEVEL_WARN,
                             _("%s: Read data for #%d"), __func__, sats[i]);
             }
             else
@@ -473,7 +625,7 @@ static void gtk_sat_module_load_sats(GtkSatModule * module)
         }
     }
 
-    sat_log_log(SAT_LOG_LEVEL_INFO,
+    sat_log_log(SAT_LOG_LEVEL_WARN,
                 _("%s: Read %d out of %d satellites"), __func__, succ, length);
 
     g_free(sats);
@@ -830,149 +982,6 @@ static void gtk_sat_module_popup_cb(GtkWidget * button, gpointer data)
     gtk_sat_module_popup(GTK_SAT_MODULE(data));
 }
 
-/**
- * Read moule configuration data.
- *
- * @param module The GtkSatModule to which the configuration will be applied.
- * @param cfgfile The configuration file.
- */
-static void gtk_sat_module_read_cfg_data(GtkSatModule * module,
-                                         const gchar * cfgfile)
-{
-    gchar          *buffer = NULL;
-    gchar          *qthfile;
-    gchar          *confdir;
-    gchar         **buffv;
-    guint           length, i;
-    GError         *error = NULL;
-
-    module->cfgdata = g_key_file_new();
-    g_key_file_set_list_separator(module->cfgdata, ';');
-
-    /* Bail out with error message if data can not be read */
-    if (!g_key_file_load_from_file(module->cfgdata, cfgfile,
-                                   G_KEY_FILE_KEEP_COMMENTS, &error))
-    {
-        g_key_file_free(module->cfgdata);
-        module->cfgdata = NULL;
-        sat_log_log(SAT_LOG_LEVEL_ERROR,
-                    _("%s: Could not load config data from %s (%s)."),
-                    __func__, cfgfile, error->message);
-
-        g_clear_error(&error);
-
-        return;
-    }
-
-    /* debug message */
-    sat_log_log(SAT_LOG_LEVEL_DEBUG,
-                _("%s: Reading configuration from %s"), __func__, cfgfile);
-
-    /* set module name */
-    buffer = g_path_get_basename(cfgfile);
-    buffv = g_strsplit(buffer, ".mod", 0);
-    module->name = g_strdup(buffv[0]);
-    g_free(buffer);
-    g_strfreev(buffv);
-
-    /* get qth file */
-    buffer = mod_cfg_get_str(module->cfgdata,
-                             MOD_CFG_GLOBAL_SECTION,
-                             MOD_CFG_QTH_FILE_KEY, SAT_CFG_STR_DEF_QTH);
-
-    confdir = get_user_conf_dir();
-    qthfile = g_strconcat(confdir, G_DIR_SEPARATOR_S, buffer, NULL);
-
-    /* load QTH data */
-    if (!qth_data_read(qthfile, module->qth))
-    {
-        /* QTH file was not found for some reason */
-        g_free(buffer);
-        g_free(qthfile);
-
-        /* remove cfg key */
-        g_key_file_remove_key(module->cfgdata,
-                              MOD_CFG_GLOBAL_SECTION,
-                              MOD_CFG_QTH_FILE_KEY, NULL);
-
-        /* save modified cfg data to file */
-        mod_cfg_save(module->name, module->cfgdata);
-
-        /* try SAT_CFG_STR_DEF_QTH */
-        buffer = sat_cfg_get_str(SAT_CFG_STR_DEF_QTH);
-        qthfile = g_strconcat(confdir, G_DIR_SEPARATOR_S, buffer, NULL);
-
-        if (!qth_data_read(qthfile, module->qth))
-        {
-            sat_log_log(SAT_LOG_LEVEL_ERROR,
-                        _
-                        ("%s: Can not load default QTH file %s; using built-in defaults"),
-                        __func__, buffer);
-
-            /* settings are really screwed up; we need some safe values here */
-            qth_safe(module->qth);
-        }
-    }
-
-    g_free(buffer);
-    g_free(confdir);
-    g_free(qthfile);
-
-    /* get timeout value */
-    module->timeout = mod_cfg_get_int(module->cfgdata,
-                                      MOD_CFG_GLOBAL_SECTION,
-                                      MOD_CFG_TIMEOUT_KEY,
-                                      SAT_CFG_INT_MODULE_TIMEOUT);
-
-    /* get grid layout configuration (introduced in 1.2) */
-    buffer = mod_cfg_get_str(module->cfgdata,
-                             MOD_CFG_GLOBAL_SECTION,
-                             MOD_CFG_GRID, SAT_CFG_STR_MODULE_GRID);
-
-    /* convert to an integer list */
-    buffv = g_strsplit(buffer, ";", 0);
-    length = g_strv_length(buffv);
-    if ((length == 0) || (length % 5 != 0))
-    {
-        /* the grid configuration is bogus; override with global default */
-        sat_log_log(SAT_LOG_LEVEL_ERROR,
-                    _("%s: Module layout is invalid: %s. Using default."),
-                    __func__, buffer);
-        g_free(buffer);
-        g_strfreev(buffv);
-
-        buffer = sat_cfg_get_str_def(SAT_CFG_STR_MODULE_GRID);
-        buffv = g_strsplit(buffer, ";", 0);
-        length = g_strv_length(buffv);
-    }
-
-    /* make a debug log entry */
-    sat_log_log(SAT_LOG_LEVEL_DEBUG,
-                _("%s: GRID(%d): %s"), __func__, length, buffer);
-    g_free(buffer);
-
-    /* number of views: we have five numbers per view (type,left,right,top,bottom) */
-    module->nviews = length / 5;
-    module->grid = g_try_new0(guint, length);
-
-    /* if we cannot allocate memory for the grid zero the views out and log */
-    if (module->grid != NULL)
-    {
-        /* convert chars to integers */
-        for (i = 0; i < length; i++)
-        {
-            module->grid[i] = (gint) g_ascii_strtoll(buffv[i], NULL, 0);
-            //g_print ("%d: %s => %d\n", i, buffv[i], module->grid[i]);
-        }
-    }
-    else
-    {
-        module->nviews = 0;
-        sat_log_log(SAT_LOG_LEVEL_ERROR,
-                    _("%s: Unable to allocate memory for grid."), __func__);
-    }
-    g_strfreev(buffv);
-}
 
 /**
  * Create a new GtkSatModule widget.
@@ -1441,9 +1450,10 @@ void gtk_sat_module_reload_sats(GtkSatModule * module)
     /* lock module */
     g_mutex_lock(&module->busy);
 
-    sat_log_log(SAT_LOG_LEVEL_INFO,
-                _("%s: Reloading satellites for module %s"),
+    sat_log_log(SAT_LOG_LEVEL_WARN,
+                _("%s: Cleared has table for module %s"),
                 __func__, module->name);
+
 
     /* remove each element from the hash table, but keep the hash table */
     g_hash_table_foreach_remove(module->satellites, empty, NULL);

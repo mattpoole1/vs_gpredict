@@ -572,6 +572,7 @@ void mod_mgr_reload_sats()
     guint           num;
     guint           i;
     GtkSatModule   *mod;
+    guint            ret;
 
     if (!nbook)
     {
@@ -584,7 +585,7 @@ void mod_mgr_reload_sats()
     num = g_slist_length(modules);
     if (num == 0)
     {
-        sat_log_log(SAT_LOG_LEVEL_INFO,
+        sat_log_log(SAT_LOG_LEVEL_WARN,
                     _("%s: No modules need to reload sats."), __func__);
         return;
     }
@@ -593,7 +594,9 @@ void mod_mgr_reload_sats()
     for (i = 0; i < num; i++)
     {
         mod = GTK_SAT_MODULE(g_slist_nth_data(modules, i));
+
         gtk_sat_module_reload_sats(mod);
+         
     }
 }
 
