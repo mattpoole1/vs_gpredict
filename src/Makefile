@@ -109,13 +109,14 @@ am_gpredict_OBJECTS = nxjson/nxjson.$(OBJEXT) \
 	sgpsdp/sgp4sdp4.$(OBJEXT) sgpsdp/sgp_in.$(OBJEXT) \
 	sgpsdp/sgp_math.$(OBJEXT) sgpsdp/sgp_obs.$(OBJEXT) \
 	sgpsdp/sgp_time.$(OBJEXT) sgpsdp/solar.$(OBJEXT) \
-	about.$(OBJEXT) compat.$(OBJEXT) first-time.$(OBJEXT) \
-	gpredict-help.$(OBJEXT) gpredict-utils.$(OBJEXT) \
-	gtk-azel-plot.$(OBJEXT) gtk-event-list.$(OBJEXT) \
-	gtk-event-list-popup.$(OBJEXT) gtk-freq-knob.$(OBJEXT) \
-	gtk-polar-plot.$(OBJEXT) gtk-polar-view.$(OBJEXT) \
-	gtk-polar-view-popup.$(OBJEXT) gtk-rig-ctrl.$(OBJEXT) \
-	gtk-rot-ctrl.$(OBJEXT) gtk-rot-knob.$(OBJEXT) \
+	about.$(OBJEXT) compat.$(OBJEXT) csv-utils.$(OBJEXT) \
+	first-time.$(OBJEXT) gpredict-help.$(OBJEXT) \
+	gpredict-utils.$(OBJEXT) gtk-azel-plot.$(OBJEXT) \
+	gtk-event-list.$(OBJEXT) gtk-event-list-popup.$(OBJEXT) \
+	gtk-freq-knob.$(OBJEXT) gtk-polar-plot.$(OBJEXT) \
+	gtk-polar-view.$(OBJEXT) gtk-polar-view-popup.$(OBJEXT) \
+	gtk-rig-ctrl.$(OBJEXT) gtk-rot-ctrl.$(OBJEXT) \
+	gtk-stn-ctrl.$(OBJEXT) gtk-rot-knob.$(OBJEXT) \
 	gtk-sat-data.$(OBJEXT) gtk-sat-list.$(OBJEXT) \
 	gtk-sat-list-popup.$(OBJEXT) gtk-sat-map.$(OBJEXT) \
 	gtk-sat-map-popup.$(OBJEXT) gtk-sat-map-ground-track.$(OBJEXT) \
@@ -129,7 +130,8 @@ am_gpredict_OBJECTS = nxjson/nxjson.$(OBJEXT) \
 	orbit-tools.$(OBJEXT) pass-popup-menu.$(OBJEXT) \
 	pass-to-txt.$(OBJEXT) predict-tools.$(OBJEXT) \
 	print-pass.$(OBJEXT) qth-data.$(OBJEXT) qth-editor.$(OBJEXT) \
-	radio-conf.$(OBJEXT) rotor-conf.$(OBJEXT) trsp-conf.$(OBJEXT) \
+	radio-conf.$(OBJEXT) rotor-conf.$(OBJEXT) \
+	station-conf.$(OBJEXT) trsp-conf.$(OBJEXT) \
 	trsp-update.$(OBJEXT) sat-cfg.$(OBJEXT) sat-info.$(OBJEXT) \
 	sat-log.$(OBJEXT) sat-log-browser.$(OBJEXT) \
 	sat-monitor.$(OBJEXT) sat-pass-dialogs.$(OBJEXT) \
@@ -142,7 +144,8 @@ am_gpredict_OBJECTS = nxjson/nxjson.$(OBJEXT) \
 	sat-pref-polar-view.$(OBJEXT) sat-pref-single-sat.$(OBJEXT) \
 	sat-pref-interfaces.$(OBJEXT) sat-pref-rig.$(OBJEXT) \
 	sat-pref-rig-editor.$(OBJEXT) sat-pref-rot.$(OBJEXT) \
-	sat-pref-rot-editor.$(OBJEXT) sat-pref-predict.$(OBJEXT) \
+	sat-pref-rot-editor.$(OBJEXT) sat-pref-stn.$(OBJEXT) \
+	sat-pref-stn-editor.$(OBJEXT) sat-pref-predict.$(OBJEXT) \
 	sat-pref-conditions.$(OBJEXT) sat-pref-multi-pass.$(OBJEXT) \
 	sat-pref-single-pass.$(OBJEXT) \
 	sat-pref-sky-at-glance.$(OBJEXT) sat-vis.$(OBJEXT) \
@@ -428,6 +431,7 @@ gpredict_SOURCES = \
     sgpsdp/solar.c \
     about.c about.h \
     compat.c compat.h config-keys.h \
+    csv-utils.c csv-utils.h \
     first-time.c first-time.h \
     gpredict-help.c gpredict-help.h \
     gpredict-utils.c gpredict-utils.h \
@@ -440,6 +444,7 @@ gpredict_SOURCES = \
     gtk-polar-view-popup.c gtk-polar-view-popup.h \
     gtk-rig-ctrl.c gtk-rig-ctrl.h \
     gtk-rot-ctrl.c gtk-rot-ctrl.h \
+    gtk-stn-ctrl.c gtk-stn-ctrl.h \
     gtk-rot-knob.c gtk-rot-knob.h \
     gtk-sat-data.c gtk-sat-data.h \
     gtk-sat-list.c gtk-sat-list.h \
@@ -473,6 +478,7 @@ gpredict_SOURCES = \
     qth-editor.c qth-editor.h \
     radio-conf.c radio-conf.h \
     rotor-conf.c rotor-conf.h \
+    station-conf.c station-conf.h \
     trsp-conf.c trsp-conf.h \
     trsp-update.c trsp-update.h \
     sat-cfg.c sat-cfg.h \
@@ -500,6 +506,8 @@ gpredict_SOURCES = \
     sat-pref-rig-editor.c sat-pref-rig-editor.h \
     sat-pref-rot.c sat-pref-rot.h sat-pref-rot-data.h \
     sat-pref-rot-editor.c sat-pref-rot-editor.h \
+    sat-pref-stn.c sat-pref-stn.h sat-pref-stn-data.h \
+    sat-pref-stn-editor.c sat-pref-stn-editor.h \
     sat-pref-predict.c sat-pref-predict.h \
     sat-pref-conditions.c sat-pref-conditions.h \
     sat-pref-multi-pass.c sat-pref-multi-pass.h \
@@ -636,6 +644,7 @@ distclean-compile:
 
 include ./$(DEPDIR)/about.Po
 include ./$(DEPDIR)/compat.Po
+include ./$(DEPDIR)/csv-utils.Po
 include ./$(DEPDIR)/first-time.Po
 include ./$(DEPDIR)/gpredict-help.Po
 include ./$(DEPDIR)/gpredict-utils.Po
@@ -662,6 +671,7 @@ include ./$(DEPDIR)/gtk-sat-popup-common.Po
 include ./$(DEPDIR)/gtk-sat-selector.Po
 include ./$(DEPDIR)/gtk-single-sat.Po
 include ./$(DEPDIR)/gtk-sky-glance.Po
+include ./$(DEPDIR)/gtk-stn-ctrl.Po
 include ./$(DEPDIR)/gui.Po
 include ./$(DEPDIR)/loc-tree.Po
 include ./$(DEPDIR)/locator.Po
@@ -709,10 +719,13 @@ include ./$(DEPDIR)/sat-pref-rot.Po
 include ./$(DEPDIR)/sat-pref-single-pass.Po
 include ./$(DEPDIR)/sat-pref-single-sat.Po
 include ./$(DEPDIR)/sat-pref-sky-at-glance.Po
+include ./$(DEPDIR)/sat-pref-stn-editor.Po
+include ./$(DEPDIR)/sat-pref-stn.Po
 include ./$(DEPDIR)/sat-pref-tle.Po
 include ./$(DEPDIR)/sat-pref.Po
 include ./$(DEPDIR)/sat-vis.Po
 include ./$(DEPDIR)/save-pass.Po
+include ./$(DEPDIR)/station-conf.Po
 include ./$(DEPDIR)/strnatcmp.Po
 include ./$(DEPDIR)/time-tools.Po
 include ./$(DEPDIR)/tle-tools.Po

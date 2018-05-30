@@ -34,6 +34,7 @@ gpredict_SOURCES = \
     sgpsdp/solar.c \
     about.c about.h \
     compat.c compat.h config-keys.h \
+    csv-utils.c csv-utils.h \
     first-time.c first-time.h \
     gpredict-help.c gpredict-help.h \
     gpredict-utils.c gpredict-utils.h \
@@ -46,6 +47,7 @@ gpredict_SOURCES = \
     gtk-polar-view-popup.c gtk-polar-view-popup.h \
     gtk-rig-ctrl.c gtk-rig-ctrl.h \
     gtk-rot-ctrl.c gtk-rot-ctrl.h \
+    gtk-stn-ctrl.c gtk-stn-ctrl.h \
     gtk-rot-knob.c gtk-rot-knob.h \
     gtk-sat-data.c gtk-sat-data.h \
     gtk-sat-list.c gtk-sat-list.h \
@@ -79,6 +81,7 @@ gpredict_SOURCES = \
     qth-editor.c qth-editor.h \
     radio-conf.c radio-conf.h \
     rotor-conf.c rotor-conf.h \
+    station-conf.c station-conf.h \
     trsp-conf.c trsp-conf.h \
     trsp-update.c trsp-update.h \
     sat-cfg.c sat-cfg.h \
@@ -106,6 +109,8 @@ gpredict_SOURCES = \
     sat-pref-rig-editor.c sat-pref-rig-editor.h \
     sat-pref-rot.c sat-pref-rot.h sat-pref-rot-data.h \
     sat-pref-rot-editor.c sat-pref-rot-editor.h \
+    sat-pref-stn.c sat-pref-stn.h sat-pref-stn-data.h \
+    sat-pref-stn-editor.c sat-pref-stn-editor.h \
     sat-pref-predict.c sat-pref-predict.h \
     sat-pref-conditions.c sat-pref-conditions.h \
     sat-pref-multi-pass.c sat-pref-multi-pass.h \

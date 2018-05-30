@@ -30,6 +30,7 @@
 #include "gpredict-utils.h"
 #include "gtk-rig-ctrl.h"
 #include "gtk-rot-ctrl.h"
+#include "gtk-stn-ctrl.h"
 #include "gtk-sat-module.h"
 #include "gtk-sat-module-popup.h"
 #include "gtk-sat-module-tmg.h"
@@ -51,12 +52,14 @@ static void     sky_at_glance_cb(GtkWidget * menuitem, gpointer data);
 static void     tmgr_cb(GtkWidget * menuitem, gpointer data);
 static void     rigctrl_cb(GtkWidget * menuitem, gpointer data);
 static void     rotctrl_cb(GtkWidget * menuitem, gpointer data);
+static void     stnctrl_cb(GtkWidget * menuitem, gpointer data);
 static void     delete_cb(GtkWidget * menuitem, gpointer data);
 static void     autotrack_cb(GtkCheckMenuItem * menuitem, gpointer data);
 static void     close_cb(GtkWidget * menuitem, gpointer data);
 static void     name_changed(GtkWidget * widget, gpointer data);
 static void     destroy_rotctrl(GtkWidget * window, gpointer data);
 static void     destroy_rigctrl(GtkWidget * window, gpointer data);
+static void     destroy_stnctrl(GtkWidget * window, gpointer data);
 static void     destroy_skg(GtkWidget * window, gpointer data);
 static gint     window_delete(GtkWidget * widget, GdkEvent * event,
                               gpointer data);
@@ -185,6 +188,15 @@ void gtk_sat_module_popup(GtkSatModule * module)
     menuitem = gtk_menu_item_new_with_label(_("Antenna Control"));
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
     g_signal_connect(menuitem, "activate", G_CALLBACK(rotctrl_cb), module);
+
+    /* separator */
+    menuitem = gtk_separator_menu_item_new();
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
+
+    /* Station Control */
+    menuitem = gtk_menu_item_new_with_label(_("Station Control"));
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
+    g_signal_connect(menuitem, "activate", G_CALLBACK(stnctrl_cb), module);
 
     /* separator */
     menuitem = gtk_separator_menu_item_new();
@@ -1019,6 +1031,86 @@ static void destroy_rotctrl(GtkWidget * window, gpointer data)
 
     module->rotctrlwin = NULL;
     module->rotctrl = NULL;
+}
+
+/**
+ * Open station control window.
+ *
+ * @param menuitem The menuitem that was selected.
+ * @param data Pointer the GtkSatModule.
+ */
+static void stnctrl_cb(GtkWidget * menuitem, gpointer data)
+{
+    GtkSatModule   *module = GTK_SAT_MODULE(data);
+    gchar          *buff;
+
+    (void)menuitem;
+
+    if (module->stnctrlwin != NULL)
+    {
+        /* there is already a roto controller for this module */
+        gtk_window_present(GTK_WINDOW(module->rotctrlwin));
+        return;
+    }
+
+    module->stnctrl = gtk_stn_ctrl_new(module);
+
+    if (module->stnctrl == NULL)
+    {
+        /* gtk_stn_ctrl_new returned NULL becasue no stations are configured */
+        GtkWidget      *dialog;
+
+        dialog = gtk_message_dialog_new(GTK_WINDOW(app),
+                                        GTK_DIALOG_MODAL |
+                                        GTK_DIALOG_DESTROY_WITH_PARENT,
+                                        GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+                                        _
+                                        ("You have no station configuration!\n"
+                                         "Please configure a station first."));
+        g_signal_connect_swapped(dialog, "response",
+                                 G_CALLBACK(gtk_widget_destroy), dialog);
+        gtk_window_set_title(GTK_WINDOW(dialog), _("ERROR"));
+        gtk_widget_show_all(dialog);
+
+        return;
+    }
+
+    /* create a window */
+    module->stnctrlwin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    buff = g_strdup_printf(_("Gpredict Station Control: %s"), module->name);
+    gtk_window_set_title(GTK_WINDOW(module->stnctrlwin), buff);
+    g_free(buff);
+    g_signal_connect(G_OBJECT(module->stnctrlwin), "delete_event",
+                     G_CALLBACK(window_delete), module);
+    g_signal_connect(G_OBJECT(module->stnctrlwin), "destroy",
+                     G_CALLBACK(destroy_stnctrl), module);
+
+    /* window icon */
+    buff = icon_file_name("gpredict-antenna.png");
+    gtk_window_set_icon_from_file(GTK_WINDOW(module->stnctrlwin), buff, NULL);
+    g_free(buff);
+
+    gtk_container_add(GTK_CONTAINER(module->stnctrlwin), module->stnctrl);
+
+    gtk_widget_show_all(module->stnctrlwin);
+}
+
+/**
+ * Destroy station control window.
+ *
+ * @param window Pointer to the station control window.
+ * @param data Pointer to the GtkSatModule to which this controller is attached.
+ * 
+ * This function is called automatically when the window is destroyed.
+ */
+static void destroy_stnctrl(GtkWidget * window, gpointer data)
+{
+    GtkSatModule   *module = GTK_SAT_MODULE(data);
+
+    (void)window;
+
+    module->stnctrlwin = NULL;
+    module->stnctrl = NULL;
 }
 
 /**

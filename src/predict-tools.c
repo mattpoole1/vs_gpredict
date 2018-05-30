@@ -44,6 +44,7 @@
 #include "sgpsdp/sgp4sdp4.h"
 #include "time-tools.h"
 
+
 static pass_t  *get_pass_engine(sat_t * sat_in, qth_t * qth, gdouble start,
                                 gdouble maxdt, gdouble min_el);
 
