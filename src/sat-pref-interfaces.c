@@ -54,6 +54,9 @@ GtkWidget      *sat_pref_interfaces_create()
     gtk_notebook_append_page(GTK_NOTEBOOK(nbook),
                              sat_pref_rot_create(),
                              gtk_label_new(_("Rotators")));
+    gtk_notebook_append_page(GTK_NOTEBOOK(nbook),
+                             sat_pref_stn_create(),
+                             gtk_label_new(_("Stations")));
 
     return nbook;
 }
@@ -63,6 +66,7 @@ void sat_pref_interfaces_cancel()
 {
     sat_pref_rig_cancel();
     sat_pref_rot_cancel();
+    sat_pref_stn_cancel();
 }
 
 /** User pressed OK. Any changes should be stored in config. */
@@ -70,4 +74,5 @@ void sat_pref_interfaces_ok()
 {
     sat_pref_rig_ok();
     sat_pref_rot_ok();
+    sat_pref_stn_ok();
 }

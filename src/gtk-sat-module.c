@@ -47,6 +47,7 @@
 #include "gtk-polar-view.h"
 #include "gtk-rig-ctrl.h"
 #include "gtk-rot-ctrl.h"
+#include "gtk-stn-ctrl.h"
 #include "gtk-sat-list.h"
 #include "gtk-sat-map.h"
 #include "gtk-sat-module.h"
@@ -150,7 +151,7 @@ static void gtk_sat_module_destroy(GtkWidget * widget)
         module->tmgActive = FALSE;
     }
 
-    /* destroy radio and rotator controllers */
+    /* destroy radio, rotator and station controllers */
     if (module->rigctrlwin)
     {
         gtk_widget_destroy(module->rigctrlwin);
@@ -159,6 +160,10 @@ static void gtk_sat_module_destroy(GtkWidget * widget)
     {
         gtk_widget_destroy(module->rotctrlwin);
     }
+    if (module->stnctrlwin)
+    {
+        gtk_widget_destroy(module->stnctrlwin);
+    } 
 
     /* destroy sky at a glance window */
     if (module->skgwin)
@@ -216,6 +221,8 @@ static void gtk_sat_module_init(GtkSatModule * module)
     module->rotctrl = NULL;
     module->rigctrlwin = NULL;
     module->rigctrl = NULL;
+    module->stnctrlwin = NULL;
+    module->stnctrl = NULL;
     module->skgwin = NULL;
     module->skg = NULL;
     module->lastSkgUpd = 0.0;
@@ -921,6 +928,10 @@ static gboolean gtk_sat_module_timeout_cb(gpointer module)
             g_hash_table_foreach(mod->satellites,
                                  gtk_sat_module_update_sat, module);
 
+        /**/ /* Designed to update all children according to module data not initialized view data */
+        //create_module_layout(mod);
+        /**/
+
         /* update children */
         for (i = 0; i < mod->nviews; i++)
         {
@@ -942,6 +953,8 @@ static gboolean gtk_sat_module_timeout_cb(gpointer module)
             gtk_rig_ctrl_update(GTK_RIG_CTRL(mod->rigctrl), mod->tmgCdnum);
         if (mod->rotctrl)
             gtk_rot_ctrl_update(GTK_ROT_CTRL(mod->rotctrl), mod->tmgCdnum);
+        if (mod->stnctrl)
+            gtk_stn_ctrl_update(GTK_STN_CTRL(mod->stnctrl), mod->tmgCdnum);
 
         /* check and update Sky at glance */
         /* FIXME: We should have some timeout counter to ensure that we don't

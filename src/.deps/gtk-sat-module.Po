@@ -625,10 +625,10 @@ gtk-sat-module.o: gtk-sat-module.c /usr/include/stdc-predef.h \
  /usr/include/goocanvas-2.0/goocanvastext.h \
  /usr/include/goocanvas-2.0/goocanvaswidget.h predict-tools.h sat-vis.h \
  gtk-rig-ctrl.h gtk-sat-module.h radio-conf.h trsp-conf.h gtk-rot-ctrl.h \
- rotor-conf.h gtk-sat-list.h gtk-sat-map.h gtk-sat-module-popup.h \
- gtk-sat-module-tmg.h gtk-single-sat.h gtk-sky-glance.h mod-cfg.h \
- mod-cfg-get-param.h sat-cfg.h mod-mgr.h orbit-tools.h sat-log.h \
- time-tools.h
+ csv-utils.h rotor-conf.h gtk-stn-ctrl.h station-conf.h gtk-sat-list.h \
+ gtk-sat-map.h gtk-sat-module-popup.h gtk-sat-module-tmg.h \
+ gtk-single-sat.h gtk-sky-glance.h mod-cfg.h mod-cfg-get-param.h \
+ sat-cfg.h mod-mgr.h orbit-tools.h sat-log.h time-tools.h
 
 /usr/include/stdc-predef.h:
 
@@ -2012,7 +2012,13 @@ trsp-conf.h:
 
 gtk-rot-ctrl.h:
 
+csv-utils.h:
+
 rotor-conf.h:
+
+gtk-stn-ctrl.h:
+
+station-conf.h:
 
 gtk-sat-list.h:
 

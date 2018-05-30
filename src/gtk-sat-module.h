@@ -58,6 +58,8 @@ struct _gtk_sat_module {
     GtkWidget      *rotctrl;    /*!< Rotator controller widget */
     GtkWidget      *rigctrlwin; /*!< Radio controller window */
     GtkWidget      *rigctrl;    /*!< Radio controller widget */
+    GtkWidget      *stnctrl;    /*!< Station Controller widget */
+    GtkWidget      *stnctrlwin; /*!< Station controller window */
     GtkWidget      *skgwin;     /*!< Sky at glance window */
     GtkWidget      *skg;        /*!< Sky at glance widget */
     gdouble         lastSkgUpd; /*!< Daynum of last GtkSkyGlance update */

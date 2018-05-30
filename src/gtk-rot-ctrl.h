@@ -7,6 +7,7 @@
 
 #include "gtk-sat-module.h"
 #include "predict-tools.h"
+#include "csv-utils.h"
 #include "rotor-conf.h"
 #include "sgpsdp/sgp4sdp4.h"
 

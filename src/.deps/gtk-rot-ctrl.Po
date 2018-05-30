@@ -639,8 +639,8 @@ gtk-rot-ctrl.o: gtk-rot-ctrl.c /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib.h qth-data.h predict-tools.h \
- sat-vis.h gtk-rot-knob.h gtk-rot-ctrl.h gtk-sat-module.h rotor-conf.h \
- sat-log.h time-tools.h
+ sat-vis.h gtk-rot-knob.h gtk-rot-ctrl.h gtk-sat-module.h csv-utils.h \
+ rotor-conf.h sat-log.h time-tools.h
 
 /usr/include/stdc-predef.h:
 
@@ -2061,6 +2061,8 @@ gtk-rot-knob.h:
 gtk-rot-ctrl.h:
 
 gtk-sat-module.h:
+
+csv-utils.h:
 
 rotor-conf.h:
 

@@ -18,8 +18,12 @@ Contact: matt.poole1@gmail.com
 
 */
 
+
 #ifndef CSV_UTILS_H
 #define CSV_UTILS_H 1
+
+#include <glib.h>
+#include <stdio.h>
 
 /** \brief Brief manual pass info .*/
 typedef struct {
@@ -29,10 +33,13 @@ typedef struct {
     gdouble   end;
 } schedule_t;
 
+/* manual pass */
 gdouble sched_last_time (gchar *filename);
 gdouble sched_update_az (gchar *filename, gdouble t);
 gdouble sched_update_el (gchar *filename, gdouble t);
+gdouble sched_v_az       (gchar *filename, gdouble t);
 schedule_t *get_schedule (gchar *filename);
+
 
 
 #endif

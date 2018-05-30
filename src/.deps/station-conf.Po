@@ -1,7 +1,7 @@
-gtk-sat-module-popup.o: gtk-sat-module-popup.c /usr/include/stdc-predef.h \
- ../build-config.h /usr/include/glib-2.0/glib/gi18n.h \
- /usr/include/glib-2.0/glib.h /usr/include/glib-2.0/glib/galloca.h \
- /usr/include/glib-2.0/glib/gtypes.h \
+station-conf.o: station-conf.c /usr/include/stdc-predef.h \
+ /usr/include/gtk-3.0/gtk/gtk.h /usr/include/gtk-3.0/gdk/gdk.h \
+ /usr/include/gtk-3.0/gdk/gdkconfig.h /usr/include/glib-2.0/glib.h \
+ /usr/include/glib-2.0/glib/galloca.h /usr/include/glib-2.0/glib/gtypes.h \
  /usr/lib/x86_64-linux-gnu/glib-2.0/include/glibconfig.h \
  /usr/include/glib-2.0/glib/gmacros.h \
  /usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h \
@@ -73,21 +73,7 @@ gtk-sat-module-popup.o: gtk-sat-module-popup.c /usr/include/stdc-predef.h \
  /usr/include/glib-2.0/glib/gvarianttype.h \
  /usr/include/glib-2.0/glib/gvariant.h \
  /usr/include/glib-2.0/glib/gversion.h \
- /usr/include/glib-2.0/glib/glib-autocleanups.h /usr/include/libintl.h \
- /usr/include/locale.h /usr/include/x86_64-linux-gnu/bits/locale.h \
- /usr/include/string.h /usr/include/x86_64-linux-gnu/bits/string.h \
- /usr/include/x86_64-linux-gnu/bits/string2.h /usr/include/endian.h \
- /usr/include/x86_64-linux-gnu/bits/endian.h \
- /usr/include/x86_64-linux-gnu/bits/string3.h \
- /usr/include/glib-2.0/glib/gstdio.h /usr/include/glib-2.0/glib/gprintf.h \
- /usr/include/stdio.h /usr/include/libio.h /usr/include/_G_config.h \
- /usr/include/wchar.h /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
- /usr/include/x86_64-linux-gnu/bits/sys_errlist.h \
- /usr/include/x86_64-linux-gnu/bits/stdio.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2.h \
- /usr/include/x86_64-linux-gnu/sys/stat.h \
- /usr/include/x86_64-linux-gnu/bits/stat.h /usr/include/gtk-3.0/gtk/gtk.h \
- /usr/include/gtk-3.0/gdk/gdk.h /usr/include/gtk-3.0/gdk/gdkconfig.h \
+ /usr/include/glib-2.0/glib/glib-autocleanups.h \
  /usr/include/gtk-3.0/gdk/gdkversionmacros.h \
  /usr/include/gtk-3.0/gdk/gdkapplaunchcontext.h \
  /usr/include/glib-2.0/gio/gio.h /usr/include/glib-2.0/gio/giotypes.h \
@@ -279,7 +265,12 @@ gtk-sat-module-popup.o: gtk-sat-module-popup.c /usr/include/stdc-predef.h \
  /usr/include/pango-1.0/pango/pango-layout.h \
  /usr/include/pango-1.0/pango/pango-tabs.h \
  /usr/include/pango-1.0/pango/pango-renderer.h \
- /usr/include/pango-1.0/pango/pango-utils.h /usr/include/cairo/cairo.h \
+ /usr/include/pango-1.0/pango/pango-utils.h /usr/include/stdio.h \
+ /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+ /usr/include/x86_64-linux-gnu/bits/sys_errlist.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio2.h /usr/include/cairo/cairo.h \
  /usr/include/cairo/cairo-version.h /usr/include/cairo/cairo-features.h \
  /usr/include/cairo/cairo-deprecated.h \
  /usr/include/gtk-3.0/gdk/gdkscreen.h \
@@ -589,50 +580,22 @@ gtk-sat-module-popup.o: gtk-sat-module-popup.c /usr/include/stdc-predef.h \
  /usr/include/gtk-3.0/gtk/deprecated/gtkvscale.h \
  /usr/include/gtk-3.0/gtk/deprecated/gtkvscrollbar.h \
  /usr/include/gtk-3.0/gtk/deprecated/gtkvseparator.h \
- /usr/include/gtk-3.0/gtk/gtk-autocleanups.h compat.h config-keys.h \
- gpredict-utils.h gtk-rig-ctrl.h gtk-sat-module.h qth-data.h \
- sgpsdp/sgp4sdp4.h /usr/include/math.h \
- /usr/include/x86_64-linux-gnu/bits/math-vector.h \
- /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
- /usr/include/x86_64-linux-gnu/bits/huge_val.h \
- /usr/include/x86_64-linux-gnu/bits/huge_valf.h \
- /usr/include/x86_64-linux-gnu/bits/huge_vall.h \
- /usr/include/x86_64-linux-gnu/bits/inf.h \
- /usr/include/x86_64-linux-gnu/bits/nan.h \
- /usr/include/x86_64-linux-gnu/bits/mathdef.h \
- /usr/include/x86_64-linux-gnu/bits/mathcalls.h \
- /usr/include/x86_64-linux-gnu/bits/mathinline.h /usr/include/stdlib.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /usr/include/x86_64-linux-gnu/bits/stdlib.h gtk-sat-data.h \
- predict-tools.h sat-vis.h radio-conf.h trsp-conf.h gtk-rot-ctrl.h \
- csv-utils.h rotor-conf.h gtk-stn-ctrl.h station-conf.h \
- gtk-sat-module-popup.h gtk-sat-module-tmg.h gtk-sky-glance.h \
- /usr/include/goocanvas-2.0/goocanvas.h \
- /usr/include/goocanvas-2.0/goocanvasenumtypes.h \
- /usr/include/goocanvas-2.0/goocanvasellipse.h \
- /usr/include/goocanvas-2.0/goocanvasitemsimple.h \
- /usr/include/goocanvas-2.0/goocanvasitem.h \
- /usr/include/goocanvas-2.0/goocanvasstyle.h \
- /usr/include/goocanvas-2.0/goocanvasitemmodel.h \
- /usr/include/goocanvas-2.0/goocanvasutils.h \
- /usr/include/goocanvas-2.0/goocanvasgrid.h \
- /usr/include/goocanvas-2.0/goocanvasgroup.h \
- /usr/include/goocanvas-2.0/goocanvasimage.h \
- /usr/include/goocanvas-2.0/goocanvaspath.h \
- /usr/include/goocanvas-2.0/goocanvaspolyline.h \
- /usr/include/goocanvas-2.0/goocanvasrect.h \
- /usr/include/goocanvas-2.0/goocanvastable.h \
- /usr/include/goocanvas-2.0/goocanvasgroup.h \
- /usr/include/goocanvas-2.0/goocanvastext.h \
- /usr/include/goocanvas-2.0/goocanvaswidget.h mod-mgr.h sat-cfg.h \
- sat-log.h
+ /usr/include/gtk-3.0/gtk/gtk-autocleanups.h \
+ /usr/include/glib-2.0/glib/gi18n.h /usr/include/libintl.h \
+ /usr/include/locale.h /usr/include/x86_64-linux-gnu/bits/locale.h \
+ /usr/include/string.h /usr/include/x86_64-linux-gnu/bits/string.h \
+ /usr/include/x86_64-linux-gnu/bits/string2.h /usr/include/endian.h \
+ /usr/include/x86_64-linux-gnu/bits/endian.h \
+ /usr/include/x86_64-linux-gnu/bits/string3.h sat-log.h compat.h \
+ station-conf.h gpredict-utils.h
 
 /usr/include/stdc-predef.h:
 
-../build-config.h:
+/usr/include/gtk-3.0/gtk/gtk.h:
 
-/usr/include/glib-2.0/glib/gi18n.h:
+/usr/include/gtk-3.0/gdk/gdk.h:
+
+/usr/include/gtk-3.0/gdk/gdkconfig.h:
 
 /usr/include/glib-2.0/glib.h:
 
@@ -815,54 +778,6 @@ gtk-sat-module-popup.o: gtk-sat-module-popup.c /usr/include/stdc-predef.h \
 /usr/include/glib-2.0/glib/gversion.h:
 
 /usr/include/glib-2.0/glib/glib-autocleanups.h:
-
-/usr/include/libintl.h:
-
-/usr/include/locale.h:
-
-/usr/include/x86_64-linux-gnu/bits/locale.h:
-
-/usr/include/string.h:
-
-/usr/include/x86_64-linux-gnu/bits/string.h:
-
-/usr/include/x86_64-linux-gnu/bits/string2.h:
-
-/usr/include/endian.h:
-
-/usr/include/x86_64-linux-gnu/bits/endian.h:
-
-/usr/include/x86_64-linux-gnu/bits/string3.h:
-
-/usr/include/glib-2.0/glib/gstdio.h:
-
-/usr/include/glib-2.0/glib/gprintf.h:
-
-/usr/include/stdio.h:
-
-/usr/include/libio.h:
-
-/usr/include/_G_config.h:
-
-/usr/include/wchar.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
-
-/usr/include/x86_64-linux-gnu/bits/sys_errlist.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdio.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdio2.h:
-
-/usr/include/x86_64-linux-gnu/sys/stat.h:
-
-/usr/include/x86_64-linux-gnu/bits/stat.h:
-
-/usr/include/gtk-3.0/gtk/gtk.h:
-
-/usr/include/gtk-3.0/gdk/gdk.h:
-
-/usr/include/gtk-3.0/gdk/gdkconfig.h:
 
 /usr/include/gtk-3.0/gdk/gdkversionmacros.h:
 
@@ -1265,6 +1180,22 @@ gtk-sat-module-popup.o: gtk-sat-module-popup.c /usr/include/stdc-predef.h \
 /usr/include/pango-1.0/pango/pango-renderer.h:
 
 /usr/include/pango-1.0/pango/pango-utils.h:
+
+/usr/include/stdio.h:
+
+/usr/include/libio.h:
+
+/usr/include/_G_config.h:
+
+/usr/include/wchar.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
+
+/usr/include/x86_64-linux-gnu/bits/sys_errlist.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdio.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdio2.h:
 
 /usr/include/cairo/cairo.h:
 
@@ -1914,114 +1845,30 @@ gtk-sat-module-popup.o: gtk-sat-module-popup.c /usr/include/stdc-predef.h \
 
 /usr/include/gtk-3.0/gtk/gtk-autocleanups.h:
 
+/usr/include/glib-2.0/glib/gi18n.h:
+
+/usr/include/libintl.h:
+
+/usr/include/locale.h:
+
+/usr/include/x86_64-linux-gnu/bits/locale.h:
+
+/usr/include/string.h:
+
+/usr/include/x86_64-linux-gnu/bits/string.h:
+
+/usr/include/x86_64-linux-gnu/bits/string2.h:
+
+/usr/include/endian.h:
+
+/usr/include/x86_64-linux-gnu/bits/endian.h:
+
+/usr/include/x86_64-linux-gnu/bits/string3.h:
+
+sat-log.h:
+
 compat.h:
-
-config-keys.h:
-
-gpredict-utils.h:
-
-gtk-rig-ctrl.h:
-
-gtk-sat-module.h:
-
-qth-data.h:
-
-sgpsdp/sgp4sdp4.h:
-
-/usr/include/math.h:
-
-/usr/include/x86_64-linux-gnu/bits/math-vector.h:
-
-/usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h:
-
-/usr/include/x86_64-linux-gnu/bits/huge_val.h:
-
-/usr/include/x86_64-linux-gnu/bits/huge_valf.h:
-
-/usr/include/x86_64-linux-gnu/bits/huge_vall.h:
-
-/usr/include/x86_64-linux-gnu/bits/inf.h:
-
-/usr/include/x86_64-linux-gnu/bits/nan.h:
-
-/usr/include/x86_64-linux-gnu/bits/mathdef.h:
-
-/usr/include/x86_64-linux-gnu/bits/mathcalls.h:
-
-/usr/include/x86_64-linux-gnu/bits/mathinline.h:
-
-/usr/include/stdlib.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdlib-float.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdlib.h:
-
-gtk-sat-data.h:
-
-predict-tools.h:
-
-sat-vis.h:
-
-radio-conf.h:
-
-trsp-conf.h:
-
-gtk-rot-ctrl.h:
-
-csv-utils.h:
-
-rotor-conf.h:
-
-gtk-stn-ctrl.h:
 
 station-conf.h:
 
-gtk-sat-module-popup.h:
-
-gtk-sat-module-tmg.h:
-
-gtk-sky-glance.h:
-
-/usr/include/goocanvas-2.0/goocanvas.h:
-
-/usr/include/goocanvas-2.0/goocanvasenumtypes.h:
-
-/usr/include/goocanvas-2.0/goocanvasellipse.h:
-
-/usr/include/goocanvas-2.0/goocanvasitemsimple.h:
-
-/usr/include/goocanvas-2.0/goocanvasitem.h:
-
-/usr/include/goocanvas-2.0/goocanvasstyle.h:
-
-/usr/include/goocanvas-2.0/goocanvasitemmodel.h:
-
-/usr/include/goocanvas-2.0/goocanvasutils.h:
-
-/usr/include/goocanvas-2.0/goocanvasgrid.h:
-
-/usr/include/goocanvas-2.0/goocanvasgroup.h:
-
-/usr/include/goocanvas-2.0/goocanvasimage.h:
-
-/usr/include/goocanvas-2.0/goocanvaspath.h:
-
-/usr/include/goocanvas-2.0/goocanvaspolyline.h:
-
-/usr/include/goocanvas-2.0/goocanvasrect.h:
-
-/usr/include/goocanvas-2.0/goocanvastable.h:
-
-/usr/include/goocanvas-2.0/goocanvasgroup.h:
-
-/usr/include/goocanvas-2.0/goocanvastext.h:
-
-/usr/include/goocanvas-2.0/goocanvaswidget.h:
-
-mod-mgr.h:
-
-sat-cfg.h:
-
-sat-log.h:
+gpredict-utils.h:

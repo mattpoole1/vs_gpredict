@@ -56,6 +56,7 @@
 #include "predict-tools.h"
 #include "sat-log.h"
 #include "time-tools.h"
+#include "csv-utils.h"
 
 
 #define FMTSTR "%7.2f\302\260"
@@ -874,11 +875,11 @@ static void read_toggle_cb(GtkButton * button, gpointer data)
 {
     GtkRotCtrl     *ctrl = GTK_ROT_CTRL(data);
     ctrl->sched = get_schedule(ctrl->filename);
-    //Test stuff 
+    /*//Test stuff 
     char name[1024];
     sprintf(name, "%f %f %f", ctrl->sched->end, ctrl->sched->az, ctrl->sched->el);
     gtk_label_set_text(GTK_LABEL(ctrl->fileLabel), _(name));
-
+*/
     ctrl->reading = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
     gtk_widget_set_sensitive(ctrl->AzSet, !ctrl->reading);
     gtk_widget_set_sensitive(ctrl->ElSet, !ctrl->reading);
