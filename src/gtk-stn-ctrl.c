@@ -14,6 +14,79 @@
 
 static GtkVBoxClass *parent_class = NULL;
 
+static gint stn_name_compare(const gchar * a, const gchar * b)
+{
+    return (gpredict_strcmp(a, b));
+}
+
+/**
+ * New station selected.
+ *
+ * \param box Pointer to the station selector combo box.
+ * \param data Pointer to the GtkStnCtrl widget.
+ * 
+ * This function is called when the user selects a new station controller
+ * device.
+ */
+static void stn_selected_cb(GtkComboBox * box, gpointer data)
+{
+    GtkStnCtrl     *ctrl = GTK_STN_CTRL(data);
+
+    /* free previous configuration */
+    if (ctrl->conf != NULL)
+    {
+        g_free(ctrl->conf->name);
+        g_free(ctrl->conf->host);
+        g_free(ctrl->conf);
+    }
+
+    ctrl->conf = g_try_new(station_conf_t, 1);
+    if (ctrl->conf == NULL)
+    {
+        sat_log_log(SAT_LOG_LEVEL_ERROR,
+                    _("%s:%d: Failed to allocate memory for station config"),
+                    __FILE__, __LINE__);
+        return;
+    }
+
+    /* load new configuration */
+    ctrl->conf->name =
+        gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(box));
+    if (station_conf_read(ctrl->conf))
+    {
+        sat_log_log(SAT_LOG_LEVEL_INFO,
+                    _("Loaded new station configuration %s"),
+                    ctrl->conf->name);
+    }
+    else
+    {
+        sat_log_log(SAT_LOG_LEVEL_ERROR,
+                    _("%s:%d: Failed to load station configuration %s"),
+                    __FILE__, __LINE__, ctrl->conf->name);
+
+        g_free(ctrl->conf->name);
+        if (ctrl->conf->host)
+            g_free(ctrl->conf->host);
+        g_free(ctrl->conf);
+        ctrl->conf = NULL;
+    }
+}
+
+/**
+ * Manage toggle signals (connect)
+ *
+ * \param button Pointer to the GtkToggle button.
+ * \param data Pointer to the GtkStnCtrl widget.
+ */
+static void connect_toggle_cb(GtkToggleButton * button, gpointer data)
+{
+    GtkStnCtrl     *ctrl = GTK_STN_CTRL(data);
+
+    sat_log_log(SAT_LOG_LEVEL_DEBUG,
+                _("%s: Connect Button Clicked"), __func__);
+
+}
+
 /*
  * Update station control state.
  * 
@@ -68,7 +141,7 @@ static gboolean have_conf()
 
 static void gtk_stn_ctrl_init(GtkStnCtrl * ctrl)
 {
-    ctrl->pos = NULL;
+    
 }
 
 static void gtk_stn_ctrl_destroy(GtkWidget * widget)
@@ -125,6 +198,93 @@ GType gtk_stn_ctrl_get_type()
     return gtk_stn_ctrl_type;
 }
 
+static GtkWidget *create_settings(GtkStnCtrl * ctrl) {
+
+    GtkWidget *frame, *table, *label;
+    GDir           *dir = NULL; /* directory handle */
+    GError         *error = NULL;       /* error flag and info */
+    gchar          *dirname;    /* directory name */
+    gchar         **vbuff;
+    const gchar    *filename;   /* file name */
+    gchar          *stnname;
+
+    table = gtk_grid_new();
+    gtk_container_set_border_width(GTK_CONTAINER(table), 5);
+    gtk_grid_set_column_spacing(GTK_GRID(table), 5);
+    gtk_grid_set_row_spacing(GTK_GRID(table), 5);
+    
+    label = gtk_label_new(_("Station Select:"));
+    g_object_set(label, "xalign", 1.0f, "yalign", 0.5f, NULL);
+    gtk_grid_attach(GTK_GRID(table), label, 0, 0, 1, 1);
+
+    ctrl->stnSel = gtk_combo_box_text_new();
+    gtk_widget_set_tooltip_text(ctrl->stnSel,
+                                _("Select station"));
+
+    /* open configuration directory */
+    dirname = get_hwconf_dir();
+
+    dir = g_dir_open(dirname, 0, &error);
+    if (dir)
+    {
+        /* read each .stn file */
+        GSList         *stns = NULL;
+        gint            i;
+        gint            n;
+
+        while ((filename = g_dir_read_name(dir)))
+        {
+            if (g_str_has_suffix(filename, ".stn"))
+            {
+                vbuff = g_strsplit(filename, ".stn", 0);
+                stns =
+                    g_slist_insert_sorted(stns, g_strdup(vbuff[0]),
+                                          (GCompareFunc) stn_name_compare);
+                g_strfreev(vbuff);
+            }
+        }
+        n = g_slist_length(stns);
+        for (i = 0; i < n; i++)
+        {
+            stnname = g_slist_nth_data(stns, i);
+            if (stnname)
+            {
+                gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT
+                                               (ctrl->stnSel), stnname);
+                g_free(stnname);
+            }
+        }
+        g_slist_free(stns);
+    }
+    else
+    {
+        sat_log_log(SAT_LOG_LEVEL_ERROR,
+                    _("%s:%d: Failed to open hwconf dir (%s)"),
+                    __FILE__, __LINE__, error->message);
+        g_clear_error(&error);
+    }
+
+    g_free(dirname);
+    g_dir_close(dir);
+
+    gtk_combo_box_set_active(GTK_COMBO_BOX(ctrl->stnSel), 0);
+    g_signal_connect(ctrl->stnSel, "changed", G_CALLBACK(stn_selected_cb),
+                     ctrl);
+    gtk_grid_attach(GTK_GRID(table), ctrl->stnSel, 1, 0, 1, 1);
+
+    ctrl->connect = gtk_toggle_button_new_with_label(_("Connect"));
+    gtk_widget_set_tooltip_text(ctrl->connect,
+                                _
+                                ("Connect to the selected station"));
+    gtk_grid_attach(GTK_GRID(table), ctrl->connect, 0, 1, 2, 1);
+    g_signal_connect(ctrl->connect, "toggled", G_CALLBACK(connect_toggle_cb),
+                     ctrl);
+
+    frame = gtk_frame_new(_("Settings"));
+    gtk_container_add(GTK_CONTAINER(frame), table);
+
+    return frame;
+}
 
 GtkWidget      *gtk_stn_ctrl_new(GtkSatModule * module)
 {
@@ -144,6 +304,10 @@ GtkWidget      *gtk_stn_ctrl_new(GtkSatModule * module)
     gtk_grid_set_row_spacing(GTK_GRID(table), 5);
     gtk_grid_set_column_spacing(GTK_GRID(table), 5);
     gtk_container_set_border_width(GTK_CONTAINER(table), 0);
+    gtk_grid_attach(GTK_GRID(table), create_settings(stn_ctrl), 0, 0, 1, 1);
+    //gtk_grid_attach(GTK_GRID(table), create_monitor(stn_ctrl), 1, 0, 1, 1);
+    //gtk_grid_attach(GTK_GRID(table), create_config(stn_ctrl), 0, 1, 1, 1);
+    //gtk_grid_attach(GTK_GRID(table), create_utils(stn_ctrl), 1, 1, 1, 1);
 
     gtk_box_pack_start(GTK_BOX(stn_ctrl), table, FALSE, FALSE, 5);
     gtk_container_set_border_width(GTK_CONTAINER(stn_ctrl), 5);

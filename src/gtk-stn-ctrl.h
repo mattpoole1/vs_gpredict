@@ -29,10 +29,44 @@ typedef struct _GtkStnCtrlClass GtkStnCtrlClass;
 
 struct _gtk_stn_ctrl {
     GtkBox          box;
-    gboolean        pos;
+
+    GtkWidget       *stnSel;
+    GtkWidget       *load;
     GtkWidget       *connect;
 
+    GtkWidget       *a1Read, *a2Read, *d1Read, *d2Read, *d3Read;
+
+    GtkWidget       *config1On, *config1Off, *config2On, *config2Off;
+    GtkWidget       *config3On, *config3Off, *config4On, *config4Off;
+
+    GtkWidget       *util1, *util2, *util3, *util4, *util5, *util6;
+
     station_conf_t  *conf;
+
+    /* TCP client to stnctld */
+    struct {
+        GThread    *thread;
+        GTimer     *timer;
+        GMutex      mutex;
+        gint        socket;     /* network socket to stnctld */
+        gboolean    util1_s;
+        gboolean    util2_s;     
+        gboolean    util3_s;   
+        gboolean    util4_s;   
+        gboolean    util5_s;   
+        gboolean    util6_s;
+        gfloat      ana1_s;
+        gfloat      ana2_s;
+        gboolean    dig1_s;
+        gboolean    dig2_s;
+        gboolean    dig3_s;
+        gboolean    config1_s;
+        gboolean    config2_s;
+        gboolean    config3_s;
+        gboolean    config4_s; 
+        gboolean    running;
+        gboolean    io_error;
+    } client;
 
 };
 
