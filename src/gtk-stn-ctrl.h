@@ -34,12 +34,15 @@ struct _gtk_stn_ctrl {
     GtkWidget       *load;
     GtkWidget       *connect;
 
-    GtkWidget       *a1Read, *a2Read, *d1Read, *d2Read, *d3Read;
+    GtkWidget       *ana1, *ana2, *dig1, *dig2, *dig3;
 
     GtkWidget       *config1On, *config1Off, *config2On, *config2Off;
     GtkWidget       *config3On, *config3Off, *config4On, *config4Off;
 
     GtkWidget       *util1, *util2, *util3, *util4, *util5, *util6;
+
+    gboolean        connected;
+    guint           timerid;
 
     station_conf_t  *conf;
 
@@ -49,23 +52,14 @@ struct _gtk_stn_ctrl {
         GTimer     *timer;
         GMutex      mutex;
         gint        socket;     /* network socket to stnctld */
-        gboolean    util1_s;
-        gboolean    util2_s;     
-        gboolean    util3_s;   
-        gboolean    util4_s;   
-        gboolean    util5_s;   
-        gboolean    util6_s;
-        gfloat      ana1_s;
-        gfloat      ana2_s;
+        gdouble     ana1_s;
+        gdouble     ana2_s;
         gboolean    dig1_s;
         gboolean    dig2_s;
         gboolean    dig3_s;
-        gboolean    config1_s;
-        gboolean    config2_s;
-        gboolean    config3_s;
-        gboolean    config4_s; 
         gboolean    running;
         gboolean    io_error;
+        gboolean    new_trg;
     } client;
 
 };

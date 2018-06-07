@@ -275,14 +275,14 @@ gboolean station_conf_read(station_conf_t * conf)
         return FALSE;
     }
 
-    conf->ana1 = g_key_file_get_integer(cfg, GROUP, KEY_ANA1, &error);
+    conf->ana2 = g_key_file_get_integer(cfg, GROUP, KEY_ANA2, &error);
     if (error != NULL)
     {
         sat_log_log(SAT_LOG_LEVEL_ERROR,
-                    _("%s: Ana1 not defined for %s."),
+                    _("%s: Ana2 not defined for %s."),
                     __func__, conf->name);
         g_clear_error(&error);
-        conf->ana1 = 0;
+        conf->ana2 = 0;
         return FALSE;
     }
 

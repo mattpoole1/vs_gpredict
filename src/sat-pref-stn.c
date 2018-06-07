@@ -768,6 +768,20 @@ static void create_stn_list()
                                                       NULL);
     gtk_tree_view_insert_column(GTK_TREE_VIEW(stnlist), column, -1);
 
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes(_("Digital 3 Input"), renderer,
+                                                      "text",
+                                                      STN_LIST_COL_DIG3,
+                                                      NULL);
+    gtk_tree_view_insert_column(GTK_TREE_VIEW(stnlist), column, -1);
+
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes(_("Digital 3 Name"), renderer,
+                                                      "text",
+                                                      STN_LIST_COL_DIG3_NAME,
+                                                      NULL);
+    gtk_tree_view_insert_column(GTK_TREE_VIEW(stnlist), column, -1);
+
     /* config relays */
     
     renderer = gtk_cell_renderer_text_new();
