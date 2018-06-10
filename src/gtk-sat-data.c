@@ -198,7 +198,7 @@ void gtk_sat_data_init_sat(sat_t * sat, qth_t * qth)
     obs_set_t       obs_set;
     geodetic_t      sat_geodetic;
     double          jul_utc, age;
-
+    
     g_return_if_fail(sat != NULL);
 
     jul_utc = Julian_Date_of_Epoch(sat->tle.epoch);     // => tsince = 0.0
@@ -259,6 +259,9 @@ void gtk_sat_data_init_sat(sat_t * sat, qth_t * qth)
 
     /* orbit type */
     sat->otype = get_orbit_type(sat);
+
+    sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Init sat %s with range %0.2f"), __func__, sat->name, sat->range); 
+    
 }
 
 /**

@@ -221,6 +221,8 @@ static void update_count_down(GtkRigCtrl * ctrl, gdouble t)
 
     delta = targettime - t;
 
+    sat_log_log(SAT_LOG_LEVEL_ERROR, _("%s: Target time (AOS or LOS) is %f and Current time is %f"), __func__, targettime, t);
+
     /* convert julian date to seconds */
     s = (guint) (delta * 86400);
 
@@ -261,6 +263,8 @@ void gtk_rig_ctrl_update(GtkRigCtrl * ctrl, gdouble t)
     gchar          *buff;
 
     g_mutex_lock(&ctrl->rig_ctrl_updatelock);
+
+    sat_log_log(SAT_LOG_LEVEL_ERROR, _("%s: Target range is %0.2f"), __func__, ctrl->target->range);
 
     if (ctrl->target)
     {

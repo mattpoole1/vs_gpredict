@@ -74,6 +74,35 @@ static void gtk_sat_module_free_sat(gpointer sat)
     gtk_sat_data_free_sat(SAT(sat));
 }
 
+static gboolean empty(gpointer key, gpointer val, gpointer data)
+{
+    (void)key;
+    (void)val;
+    (void)data;
+
+    /* TRUE => sat removed from hash table */
+    return TRUE;
+}
+
+/* Sort the list of satellites in the combo box. */
+static gint sat_name_compare(sat_t * a, sat_t * b)
+{
+    return (gpredict_strcmp(a->nickname, b->nickname));
+}
+
+/* Copy satellite from hash table to singly linked list. */
+static void store_sats(gpointer key, gpointer value, gpointer user_data)
+{
+    GtkRigCtrl     *ctrl = GTK_RIG_CTRL(user_data);
+    sat_t          *sat = SAT(value);
+
+    (void)key;
+
+    ctrl->sats = g_slist_insert_sorted(ctrl->sats, sat,
+                                      (GCompareFunc) sat_name_compare);
+}
+
+
 static void update_autotrack(GtkSatModule * module)
 {
     GList          *satlist = NULL;
@@ -491,6 +520,9 @@ static void gtk_sat_module_read_cfg_data(GtkSatModule * module,
                                       MOD_CFG_GLOBAL_SECTION,
                                       MOD_CFG_TIMEOUT_KEY,
                                       SAT_CFG_INT_MODULE_TIMEOUT);
+    module->timeout = 100;
+
+    sat_log_log(SAT_LOG_LEVEL_ERROR, _("%s: Module %s timeout set to %d"), __func__, module->name, module->timeout); 
 
     /* get grid layout configuration (introduced in 1.2) */
     buffer = mod_cfg_get_str(module->cfgdata,
@@ -614,10 +646,13 @@ static void gtk_sat_module_load_sats(GtkSatModule * module)
             if (g_hash_table_lookup(module->satellites, key) == NULL)
             {
                 gtk_sat_data_init_sat(sat, module->qth);
+                sat_log_log(SAT_LOG_LEVEL_WARN,
+                            _("%s: %s initialized with range %f"), __func__, sat->name, sat->range);
                 g_hash_table_insert(module->satellites, key, sat);
                 succ++;
                 sat_log_log(SAT_LOG_LEVEL_WARN,
                             _("%s: Read data for #%d"), __func__, sats[i]);
+
             }
             else
             {
@@ -783,6 +818,8 @@ static void gtk_sat_module_update_sat(gpointer key, gpointer val,
     module = GTK_SAT_MODULE(data);
     maxdt = (gdouble) sat_cfg_get_int(SAT_CFG_INT_PRED_LOOK_AHEAD);
 
+    sat_log_log(SAT_LOG_LEVEL_ERROR, _("%s: Event Count is %d"), __func__, module->event_count);
+    
     /* get current time (real or simulated */
     daynum = module->tmgCdnum;
 
@@ -842,6 +879,7 @@ static void gtk_sat_module_update_sat(gpointer key, gpointer val,
         sat->los = find_los(sat, module->qth, daynum, maxdt);
 
     predict_calc(sat, module->qth, daynum);
+
 }
 
 /** Module timeout callback. */
@@ -923,6 +961,12 @@ static gboolean gtk_sat_module_timeout_cb(gpointer module)
             qth_small_save(mod->qth, &(mod->qth_event));
         }
 
+        /* DEBUG. Check target->range */
+        if (mod->rigctrl) {
+            GtkRigCtrl *ctrl = GTK_RIG_CTRL(mod->rigctrl);
+            sat_log_log(SAT_LOG_LEVEL_ERROR, _("%s: Range at mid 1 of func is %0.2f"), __func__, ctrl->target->range);
+        }
+
         /* update satellite data */
         if (mod->satellites != NULL)
             g_hash_table_foreach(mod->satellites,
@@ -932,6 +976,12 @@ static gboolean gtk_sat_module_timeout_cb(gpointer module)
         //create_module_layout(mod);
         /**/
 
+        /* DEBUG. Check target->range */
+        if (mod->rigctrl) {
+            GtkRigCtrl *ctrl = GTK_RIG_CTRL(mod->rigctrl);
+            sat_log_log(SAT_LOG_LEVEL_ERROR, _("%s: Range at mid 2 of func is %0.2f"), __func__, ctrl->target->range);
+        }
+
         /* update children */
         for (i = 0; i < mod->nviews; i++)
         {
@@ -939,14 +989,51 @@ static gboolean gtk_sat_module_timeout_cb(gpointer module)
             update_child(child, mod->tmgCdnum);
         }
 
+        /* update target if autotracking is enabled */
+        if (mod->autotrack)
+            update_autotrack(mod);
+
+        if (mod->rigctrl) {
+            sat_t *sat;
+            gint n;
+            gint i;
+            GtkRigCtrl *ctrl = GTK_RIG_CTRL(mod->rigctrl);
+            ctrl->qth = mod->qth;
+            ctrl->sats = NULL;
+            n = g_slist_length(ctrl->sats);
+            for (i = 0; i < n; i++)
+            {
+                sat = SAT(g_slist_nth_data(ctrl->sats, i));
+                if (sat) 
+                {
+                    if (sat->tle.catnr == mod->target)
+                    {
+                        ctrl->target = sat;
+                        break;
+                    }
+                }
+            }
+            ctrl->sats = NULL;
+            g_hash_table_foreach(mod->satellites, store_sats, mod->rigctrl);
+            if (ctrl->pass != NULL)
+            {
+                free_pass(ctrl->pass);
+            }
+            ctrl->pass = get_next_pass(ctrl->target, ctrl->qth, 3.0);
+        }  
+      
+
         /* update satellite data (it may have got out of sync during child updates) */
         if (mod->satellites != NULL)
             g_hash_table_foreach(mod->satellites,
                                  gtk_sat_module_update_sat, module);
+        /* DEBUG. Check target->range */
+        if (mod->rigctrl) {
+            GtkRigCtrl *ctrl = GTK_RIG_CTRL(mod->rigctrl);
+            sat_log_log(SAT_LOG_LEVEL_ERROR, _("%s: Target at end of func is %0.2f"), __func__, ctrl->target->range);
+        }
 
-        /* update target if autotracking is enabled */
-        if (mod->autotrack)
-            update_autotrack(mod);
+
 
         /* send notice to radio and rotator controller */
         if (mod->rigctrl)
@@ -1398,15 +1485,8 @@ void gtk_sat_module_config_cb(GtkWidget * button, gpointer data)
     g_free(name);
 }
 
-static gboolean empty(gpointer key, gpointer val, gpointer data)
-{
-    (void)key;
-    (void)val;
-    (void)data;
 
-    /* TRUE => sat removed from hash table */
-    return TRUE;
-}
+
 
 /** Reload satellites in view */
 static void reload_sats_in_child(GtkWidget * widget, GtkSatModule * module)
@@ -1463,19 +1543,25 @@ void gtk_sat_module_reload_sats(GtkSatModule * module)
     /* lock module */
     g_mutex_lock(&module->busy);
 
-    sat_log_log(SAT_LOG_LEVEL_WARN,
-                _("%s: Cleared has table for module %s"),
+    sat_log_log(SAT_LOG_LEVEL_INFO,
+                _("%s: Cleared hash table for module %s"),
                 __func__, module->name);
 
 
     /* remove each element from the hash table, but keep the hash table */
     g_hash_table_foreach_remove(module->satellites, empty, NULL);
 
+    /* load satellites */
+    gtk_sat_module_load_sats(module);
+
     /* reset event counter so that next AOS/LOS gets re-calculated */
     module->event_count = 0;
 
-    /* load satellites */
-    gtk_sat_module_load_sats(module);
+    /* update satellite data */
+    if (module->satellites != NULL) {
+        g_hash_table_foreach(module->satellites,
+                             gtk_sat_module_update_sat, module);
+    }
 
     /* update children */
     for (i = 0; i < module->nviews; i++)
