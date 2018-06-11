@@ -488,6 +488,7 @@ static gboolean stn_ctrl_timeout_cb(gpointer data)
                     text = "OFF";
                 }
                 gtk_label_set_text(GTK_LABEL(ctrl->dig1), _(text));
+                g_free(text);
 
                 if (dig2) {
                     text = "ON";
@@ -495,6 +496,7 @@ static gboolean stn_ctrl_timeout_cb(gpointer data)
                     text = "OFF";
                 }
                 gtk_label_set_text(GTK_LABEL(ctrl->dig2), _(text));
+                g_free(text);
 
                 if (dig3) {
                     text = "ON";
@@ -502,6 +504,7 @@ static gboolean stn_ctrl_timeout_cb(gpointer data)
                     text = "OFF";
                 }
                 gtk_label_set_text(GTK_LABEL(ctrl->dig3), _(text));
+                g_free(text);
                 
             }
         } else {
@@ -1334,12 +1337,25 @@ static gboolean have_conf()
 
 static void gtk_stn_ctrl_init(GtkStnCtrl * ctrl)
 {
-    
+
+    ctrl->connected = FALSE;
+    ctrl->conf = NULL;
+    ctrl->timerid = 0;
+
+    g_mutex_init(&ctrl->client.mutex);
+    ctrl->client.thread = NULL;
+    ctrl->client.socket = -1;
+    ctrl->client.running = FALSE;    
 }
 
 static void gtk_stn_ctrl_destroy(GtkWidget * widget)
 {
     GtkStnCtrl     *ctrl = GTK_STN_CTRL(widget);
+    
+    if (ctrl->timerid > 0)
+    {
+        g_source_remove(ctrl->timerid);
+    }
 
     /* free configuration */
     if (ctrl->conf != NULL)
@@ -1349,6 +1365,14 @@ static void gtk_stn_ctrl_destroy(GtkWidget * widget)
         g_free(ctrl->conf);
         ctrl->conf = NULL;
     }
+
+    if (ctrl->client.running) 
+    {
+        ctrl->client.running = FALSE;
+        g_thread_join(ctrl->client.thread);
+    }
+
+    g_mutex_clear(&ctrl->client.mutex);
 
     (*GTK_WIDGET_CLASS(parent_class)->destroy) (widget);   
 

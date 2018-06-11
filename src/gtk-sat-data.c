@@ -260,7 +260,6 @@ void gtk_sat_data_init_sat(sat_t * sat, qth_t * qth)
     /* orbit type */
     sat->otype = get_orbit_type(sat);
 
-    sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Init sat %s with range %0.2f"), __func__, sat->name, sat->range); 
     
 }
 

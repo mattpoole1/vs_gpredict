@@ -207,21 +207,23 @@ static void update_count_down(GtkRigCtrl * ctrl, gdouble t)
     guint           h, m, s;
     gchar          *aoslos;
 
+
+
     /* select AOS or LOS time depending on target elevation */
     if (ctrl->target->el < 0.0)
     {
         targettime = ctrl->target->aos;
         aoslos = g_strdup_printf(_("AOS in"));
+        sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Tracked Satellite %s has AOS of %0.2f"), __func__, ctrl->target->name, ctrl->target->aos);
     }
     else
     {
         targettime = ctrl->target->los;
         aoslos = g_strdup_printf(_("LOS in"));
+        sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Tracked Satellite %s has LOS of %0.2f"), __func__, ctrl->target->name, ctrl->target->los);
     }
 
     delta = targettime - t;
-
-    sat_log_log(SAT_LOG_LEVEL_ERROR, _("%s: Target time (AOS or LOS) is %f and Current time is %f"), __func__, targettime, t);
 
     /* convert julian date to seconds */
     s = (guint) (delta * 86400);
