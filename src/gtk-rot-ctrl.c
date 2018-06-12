@@ -810,7 +810,7 @@ static void track_toggle_cb(GtkToggleButton * button, gpointer data)
                              !(ctrl->tracking || locked));
     gtk_widget_set_sensitive(ctrl->AzSet, !ctrl->tracking);
     gtk_widget_set_sensitive(ctrl->ElSet, !ctrl->tracking);
-    gtk_widget_set_sensitive(ctrl->calibrate, !ctrl->tracking);
+    gtk_widget_set_sensitive(ctrl->calibrate, (!ctrl->tracking && locked));
 }
 
 /**

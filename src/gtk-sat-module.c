@@ -997,22 +997,30 @@ static gboolean gtk_sat_module_timeout_cb(gpointer module)
             sat_t *sat;
             gint n;
             gint i;
+            gint catnum;
             GtkRigCtrl *rig = GTK_RIG_CTRL(mod->rigctrl);
+            if (mod->autotrack) 
+            {
+                catnum = mod->target;
+            } else {
+                catnum = rig->target->tle.catnr;
+            }
+            sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Catnum for next target will be %d"), __func__, catnum);
             rig->qth = mod->qth;
             //gtk_rig_ctrl_select_sat(GTK_RIG_CTRL(mod->rigctrl), mod->target);
             rig->sats = NULL;
             g_hash_table_foreach(mod->satellites, store_sats_rig, mod->rigctrl);
-
-        
+                    
             n = g_slist_length(rig->sats);
             for (i = 0; i < n; i++)
             {
                 sat = SAT(g_slist_nth_data(rig->sats, i));
                 if (sat) 
                 {
-                    if (sat->tle.catnr == mod->target)
+                    if (sat->tle.catnr == catnum)
                     {
                         rig->target = sat;
+                        sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Updated rigctrl target to %s"), __func__, sat->name);
                         break;
                     }
                 }
@@ -1023,15 +1031,27 @@ static gboolean gtk_sat_module_timeout_cb(gpointer module)
                 free_pass(rig->pass);
             }
             rig->pass = get_next_pass(rig->target, rig->qth, 3.0);
+
+            if (!mod->autotrack)
+            {
+                sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Mod Target Catnum is: %d"), __func__, mod->target);
+                sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Rig Target Catnum is: %d, Name: %s"), __func__, rig->target->tle.catnr, rig->target->name);
+            }
         }
 
         if (mod->rotctrl) {
             sat_t *sat;
             gint n;
             gint i;
+            gint catnum;
             GtkRotCtrl *rot = GTK_ROT_CTRL(mod->rotctrl);
+            if (mod->autotrack) 
+            {
+                catnum = mod->target;
+            } else {
+                catnum = rot->target->tle.catnr;
+            }
             rot->qth = mod->qth;
-            //gtk_rot_ctrl_select_sat(GTK_ROT_CTRL(mod->rotctrl), mod->target);
             rot->sats = NULL;
             g_hash_table_foreach(mod->satellites, store_sats_rot, mod->rotctrl);
 
@@ -1042,7 +1062,7 @@ static gboolean gtk_sat_module_timeout_cb(gpointer module)
                 sat = SAT(g_slist_nth_data(rot->sats, i));
                 if (sat) 
                 {
-                    if (sat->tle.catnr == mod->target)
+                    if (sat->tle.catnr == catnum)
                     {
                         rot->target = sat;
                         break;
@@ -1503,8 +1523,97 @@ void gtk_sat_module_config_cb(GtkWidget * button, gpointer data)
     g_free(name);
 }
 
+static void reload_sats_in_rigctrl(GtkSatModule * module)
+{
+    gint catnum;
+    gint i;
+    gint n;
+    sat_t *sat;
 
+    /* Load rigctrl module */
+    GtkRigCtrl *rig = GTK_RIG_CTRL(module->rigctrl);
 
+    /* Clear sat list and reload */
+    rig->sats = NULL;
+    g_hash_table_foreach(module->satellites, store_sats_rig, module->rigctrl);
+    
+    /* Update qth */
+    rig->qth = module->qth;
+
+    /* Update target */
+    if (module->autotrack)
+    {
+        /* Module->target stores catnum for target sat */
+        catnum = module->target;
+    } else {
+        /* Target sat is only local to rigctrl, so get from SatSel entry box */
+        gint j;
+        sat_t *targ;
+        j = gtk_combo_box_get_active(rig->SatSel);
+        targ = SAT(g_slist_nth_data(rig->sats, j));
+        catnum = targ->tle.catnr;
+    }
+    /* Now pick sat with correct catnum */
+    n = g_slist_length(rig->sats);
+    for (i = 0; i < n; i++)
+    {
+        sat = SAT(g_slist_nth_data(rig->sats, i));
+        if (sat)
+        {
+            if (sat->tle.catnr == catnum) 
+            {
+                rig->target = sat;
+                break;
+            }
+        }
+    }
+}
+
+static void reload_sats_in_rotctrl(GtkSatModule * module)
+{
+    gint catnum;
+    gint i;
+    gint n;
+    sat_t *sat;
+
+    /* Load rotctrl module */
+    GtkRotCtrl *rot = GTK_ROT_CTRL(module->rotctrl);
+
+    /* Clear sat list and reload */
+    rot->sats = NULL;
+    g_hash_table_foreach(module->satellites, store_sats_rot, module->rotctrl);
+    
+    /* Update qth */
+    rot->qth = module->qth;
+
+    /* Update target */
+    if (module->autotrack)
+    {
+        /* Module->target stores catnum for target sat */
+        catnum = module->target;
+    } else {
+        /* Target sat is only local to rotctrl, so get from SatSel entry box */
+        gint j;
+        sat_t *targ;
+        j = gtk_combo_box_get_active(rot->SatSel);
+        targ = SAT(g_slist_nth_data(rot->sats, j));
+        catnum = targ->tle.catnr;
+    }
+    /* Now pick sat with correct catnum */
+    n = g_slist_length(rot->sats);
+    for (i = 0; i < n; i++)
+    {
+        sat = SAT(g_slist_nth_data(rot->sats, i));
+        if (sat)
+        {
+            if (sat->tle.catnr == catnum) 
+            {
+                rot->target = sat;
+                break;
+            }
+        }
+    }
+}
 
 /** Reload satellites in view */
 static void reload_sats_in_child(GtkWidget * widget, GtkSatModule * module)
@@ -1574,7 +1683,7 @@ void gtk_sat_module_reload_sats(GtkSatModule * module)
 
     /* reset event counter so that next AOS/LOS gets re-calculated */
     module->event_count = 0;
-
+    
     /* update satellite data */
     if (module->satellites != NULL) {
         g_hash_table_foreach(module->satellites,
@@ -1591,38 +1700,11 @@ void gtk_sat_module_reload_sats(GtkSatModule * module)
     /* FIXME: radio and rotator controller */
     if (module->rigctrl) 
     {
-        /* Load rigctrl module */
-        GtkRigCtrl *rig = GTK_RIG_CTRL(module->rigctrl);
-        
-        /* Clear sat list and reload */
-        rig->sats = NULL;
-        g_hash_table_foreach(module->satellites, store_sats_rig, module->rigctrl);
-
-        /* Update qth */
-        rig->qth = module->qth;
-
-        /* Update target */
-        gtk_rig_ctrl_select_sat(GTK_RIG_CTRL(module->rigctrl), module->target);
-        sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Target satellite for rigctrl is now %s"), __func__, rig->target->name);
-
+        reload_sats_in_rigctrl(module);
     }
-
-    if (module->rotctrl) 
+    if (module->rotctrl)
     {
-        /* Load rotctrl module */
-        GtkRotCtrl *rot = GTK_ROT_CTRL(module->rotctrl);
-        
-        /* Clear sat list and reload */
-        rot->sats = NULL;
-        g_hash_table_foreach(module->satellites, store_sats_rot, module->rotctrl);
-
-        /* Update qth */
-        rot->qth = module->qth;
-
-        /* Update target */
-        gtk_rot_ctrl_select_sat(GTK_ROT_CTRL(module->rotctrl), module->target);
-        
-
+        reload_sats_in_rotctrl(module);
     }
 
     /* unlock module */
