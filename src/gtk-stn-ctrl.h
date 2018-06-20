@@ -69,8 +69,8 @@ struct _GtkStnCtrlClass {
 };
 
 GType           gtk_stn_ctrl_get_type(void);
-GtkWidget      *gtk_stn_ctrl_new(GtkSatModule * module);
-void            gtk_stn_ctrl_update(GtkStnCtrl * ctrl, gdouble t);
+GtkWidget      *gtk_stn_ctrl_new(void);
+void            gtk_stn_ctrl_update(GtkStnCtrl * ctrl);
 
 #ifdef __cplusplus
 }

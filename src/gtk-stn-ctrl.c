@@ -19,7 +19,8 @@
 #include <winsock2.h>
 #endif
 
-         
+#include "compat.h"
+#include "gpredict-utils.h"  
 #include "gtk-stn-ctrl.h"
 #include "sat-log.h"
 
@@ -216,8 +217,10 @@ static gboolean analog_read(GtkStnCtrl * ctrl, gint a_num, gdouble * ana)
                             __FILE__, __LINE__, vbuff[0]);
             }
 
+            g_strfreev(vbuff);
+
         } 
-        g_strfreev(vbuff);
+        
     } else {
         sat_log_log(SAT_LOG_LEVEL_ERROR,
                     _("%s: Read/write failed, retcode = %i"),
@@ -296,7 +299,7 @@ static gboolean coil_read(GtkStnCtrl * ctrl, gint c_num)
     gchar          *buff;
     gchar           buffback[128];
 
-    gboolean        state;
+    gboolean        state = FALSE;
     gboolean        retcode;
     gboolean        bad_resp = FALSE;
 
@@ -376,16 +379,10 @@ static gpointer stnctld_client_thread(gpointer data)
     gboolean        new_trg = FALSE;
     gboolean        io_error = FALSE;
     GtkStnCtrl     *ctrl = GTK_STN_CTRL(data);
-  
 
-    sat_log_log(SAT_LOG_LEVEL_ERROR,
-                           _("Starting stnctld client thread"));
 
     ctrl->client.socket = stnctld_socket_open(ctrl->conf->host,
                                               ctrl->conf->port);
-
-    sat_log_log(SAT_LOG_LEVEL_ERROR,
-                _("Socket opened at %s:%d"), ctrl->conf->host, ctrl->conf->port);
 
     if (ctrl->client.socket == -1)
         return GINT_TO_POINTER(-1);
@@ -397,29 +394,22 @@ static gpointer stnctld_client_thread(gpointer data)
     while (ctrl->client.running)
     {
         g_timer_start(ctrl->client.timer);
-        io_error = FALSE;
+        io_error = !get_readings(ctrl, &a1s, &a2s, &dig1_s, &dig2_s, &dig3_s);
+
         g_mutex_lock(&ctrl->client.mutex);
-
-        if (!get_readings(ctrl, &a1s, &a2s, &dig1_s, &dig2_s, &dig3_s))
-        {
-            ctrl->client.io_error = TRUE; 
-        } else {
-            ctrl->client.io_error = FALSE;
-        }
-
-
+        ctrl->client.io_error = io_error;
         ctrl->client.ana1_s = a1s;
         ctrl->client.ana2_s = a2s;
         ctrl->client.dig1_s = dig1_s;
         ctrl->client.dig2_s = dig2_s;
         ctrl->client.dig3_s = dig3_s;
         ctrl->client.new_trg = new_trg;
+        g_mutex_unlock(&ctrl->client.mutex);
 
         sat_log_log(SAT_LOG_LEVEL_ERROR ,_("%s: Ana 1 val is now %f"), __func__, ctrl->client.ana1_s);
         a1s = 0.0;
         a2s = 0.0;
 
-        g_mutex_unlock(&ctrl->client.mutex);
 
         /* ensure stnctl duty cycle stays below 50%, but wait at least 700 ms (TBC) */
         elapsed_time = MAX(g_timer_elapsed(ctrl->client.timer, NULL), 0.7);
@@ -441,8 +431,7 @@ static gboolean stn_ctrl_timeout_cb(gpointer data)
 {
 
     GtkStnCtrl   *ctrl = GTK_STN_CTRL(data);
-    gchar       *buff;
-    gchar       *text;
+
     gdouble      ana1;
     gdouble      ana2;
     gboolean     dig1;
@@ -474,37 +463,34 @@ static gboolean stn_ctrl_timeout_cb(gpointer data)
             }
             else
             {
-                /* update display widgets */
+                gchar       *text;
                 text = g_strdup_printf("%.2f\302\260", ana1);
                 gtk_label_set_text(GTK_LABEL(ctrl->ana1), text);
-                g_free(text);
+
                 text = g_strdup_printf("%.2f\302\260", ana2);
                 gtk_label_set_text(GTK_LABEL(ctrl->ana2), text);
-                g_free(text);
 
                 if (dig1) {
-                    text = "ON";
+                    text = "ON\n";
                 } else {
-                    text = "OFF";
+                    text = "OFF\n";
                 }
-                gtk_label_set_text(GTK_LABEL(ctrl->dig1), _(text));
-                g_free(text);
+                gtk_label_set_text(GTK_LABEL(ctrl->dig1), text);
 
                 if (dig2) {
-                    text = "ON";
+                    text = "ON\n";
                 } else {
-                    text = "OFF";
+                    text = "OFF\n";
                 }
-                gtk_label_set_text(GTK_LABEL(ctrl->dig2), _(text));
-                g_free(text);
+                gtk_label_set_text(GTK_LABEL(ctrl->dig2), text);
 
                 if (dig3) {
-                    text = "ON";
+                    text = "ON\n";
                 } else {
-                    text = "OFF";
+                    text = "OFF\n";
                 }
-                gtk_label_set_text(GTK_LABEL(ctrl->dig3), _(text));
-                g_free(text);
+                gtk_label_set_text(GTK_LABEL(ctrl->dig3), text);
+ 
                 
             }
         } else {
@@ -602,15 +588,10 @@ static void connect_toggle_cb(GtkToggleButton * button, gpointer data)
         }
         ctrl->client.thread =
             g_thread_new("gpredict_stnctl", stnctld_client_thread, ctrl);
-        sat_log_log(SAT_LOG_LEVEL_ERROR,
-                _("%s: Client thread begun"), __func__);
         ctrl->connected = TRUE;
         //update_relay_states();
         //enable_all_relays();
     }
-
-    sat_log_log(SAT_LOG_LEVEL_DEBUG,
-                _("%s: Connect Button Clicked"), __func__);
 
 }
 
@@ -620,7 +601,7 @@ static void connect_toggle_cb(GtkToggleButton * button, gpointer data)
  * \param button Pointer to the GtkToggle button.
  * \param data Pointer to the GtkStnCtrl widget.
  */
-static void config1On_toggle_cb(GtkToggleButton * button, gpointer data)
+static void config1On_toggle_cb(GtkWidget * button, gpointer data)
 {
     GtkStnCtrl    *ctrl = GTK_STN_CTRL(data);
     gchar          *buff;
@@ -628,7 +609,7 @@ static void config1On_toggle_cb(GtkToggleButton * button, gpointer data)
     gboolean        retcode;
     gint            retval;
 
-    if (gtk_toggle_button_get_active(button))
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
     {
         
         /* send command */
@@ -640,7 +621,7 @@ static void config1On_toggle_cb(GtkToggleButton * button, gpointer data)
             if (retval == 0) {
 
                 /* Only switch if successful */
-                gtk_toggle_button_set_active(ctrl->config1Off, FALSE);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config1Off), FALSE);
                 gtk_widget_set_sensitive(button, FALSE);
                 gtk_widget_set_sensitive(ctrl->config1Off, TRUE);
             } else {
@@ -663,7 +644,7 @@ static void config1On_toggle_cb(GtkToggleButton * button, gpointer data)
  * \param button Pointer to the GtkToggle button.
  * \param data Pointer to the GtkStnCtrl widget.
  */
-static void config1Off_toggle_cb(GtkToggleButton * button, gpointer data)
+static void config1Off_toggle_cb(GtkWidget * button, gpointer data)
 {
     GtkStnCtrl    *ctrl = GTK_STN_CTRL(data);
     gchar          *buff;
@@ -671,7 +652,7 @@ static void config1Off_toggle_cb(GtkToggleButton * button, gpointer data)
     gboolean        retcode;
     gint            retval;
 
-    if (gtk_toggle_button_get_active(button))
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
     {
         
         /* send command */
@@ -683,7 +664,7 @@ static void config1Off_toggle_cb(GtkToggleButton * button, gpointer data)
             if (retval == 0) {
 
                 /* Only switch if successful */
-                gtk_toggle_button_set_active(ctrl->config1On, FALSE);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config1On), FALSE);
                 gtk_widget_set_sensitive(button, FALSE);
                 gtk_widget_set_sensitive(ctrl->config1On, TRUE);
                 
@@ -707,7 +688,7 @@ static void config1Off_toggle_cb(GtkToggleButton * button, gpointer data)
  * \param button Pointer to the GtkToggle button.
  * \param data Pointer to the GtkStnCtrl widget.
  */
-static void config2On_toggle_cb(GtkToggleButton * button, gpointer data)
+static void config2On_toggle_cb(GtkWidget * button, gpointer data)
 {
     GtkStnCtrl    *ctrl = GTK_STN_CTRL(data);
     gchar          *buff;
@@ -715,7 +696,7 @@ static void config2On_toggle_cb(GtkToggleButton * button, gpointer data)
     gboolean        retcode;
     gint            retval;
 
-    if (gtk_toggle_button_get_active(button))
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
     {
         
         /* send command */
@@ -727,7 +708,7 @@ static void config2On_toggle_cb(GtkToggleButton * button, gpointer data)
             if (retval == 0) {
 
                 /* Only switch if successful */
-                gtk_toggle_button_set_active(ctrl->config2Off, FALSE);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config2Off), FALSE);
                 gtk_widget_set_sensitive(button, FALSE);
                 gtk_widget_set_sensitive(ctrl->config2Off, TRUE);
             } else {
@@ -750,7 +731,7 @@ static void config2On_toggle_cb(GtkToggleButton * button, gpointer data)
  * \param button Pointer to the GtkToggle button.
  * \param data Pointer to the GtkStnCtrl widget.
  */
-static void config2Off_toggle_cb(GtkToggleButton * button, gpointer data)
+static void config2Off_toggle_cb(GtkWidget * button, gpointer data)
 {
     GtkStnCtrl    *ctrl = GTK_STN_CTRL(data);
     gchar          *buff;
@@ -758,7 +739,7 @@ static void config2Off_toggle_cb(GtkToggleButton * button, gpointer data)
     gboolean        retcode;
     gint            retval;
 
-    if (gtk_toggle_button_get_active(button))
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
     {
         
         /* send command */
@@ -770,7 +751,7 @@ static void config2Off_toggle_cb(GtkToggleButton * button, gpointer data)
             if (retval == 0) {
 
                 /* Only switch if successful */
-                gtk_toggle_button_set_active(ctrl->config2On, FALSE);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config2On), FALSE);
                 gtk_widget_set_sensitive(button, FALSE);
                 gtk_widget_set_sensitive(ctrl->config2On, TRUE);
                 
@@ -794,7 +775,7 @@ static void config2Off_toggle_cb(GtkToggleButton * button, gpointer data)
  * \param button Pointer to the GtkToggle button.
  * \param data Pointer to the GtkStnCtrl widget.
  */
-static void config3On_toggle_cb(GtkToggleButton * button, gpointer data)
+static void config3On_toggle_cb(GtkWidget * button, gpointer data)
 {
     GtkStnCtrl    *ctrl = GTK_STN_CTRL(data);
     gchar          *buff;
@@ -802,7 +783,7 @@ static void config3On_toggle_cb(GtkToggleButton * button, gpointer data)
     gboolean        retcode;
     gint            retval;
 
-    if (gtk_toggle_button_get_active(button))
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
     {
         
         /* send command */
@@ -814,7 +795,7 @@ static void config3On_toggle_cb(GtkToggleButton * button, gpointer data)
             if (retval == 0) {
 
                 /* Only switch if successful */
-                gtk_toggle_button_set_active(ctrl->config3Off, FALSE);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config3Off), FALSE);
                 gtk_widget_set_sensitive(button, FALSE);
                 gtk_widget_set_sensitive(ctrl->config3Off, TRUE);
             } else {
@@ -837,7 +818,7 @@ static void config3On_toggle_cb(GtkToggleButton * button, gpointer data)
  * \param button Pointer to the GtkToggle button.
  * \param data Pointer to the GtkStnCtrl widget.
  */
-static void config3Off_toggle_cb(GtkToggleButton * button, gpointer data)
+static void config3Off_toggle_cb(GtkWidget * button, gpointer data)
 {
     GtkStnCtrl    *ctrl = GTK_STN_CTRL(data);
     gchar          *buff;
@@ -845,7 +826,7 @@ static void config3Off_toggle_cb(GtkToggleButton * button, gpointer data)
     gboolean        retcode;
     gint            retval;
 
-    if (gtk_toggle_button_get_active(button))
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
     {
         
         /* send command */
@@ -857,7 +838,7 @@ static void config3Off_toggle_cb(GtkToggleButton * button, gpointer data)
             if (retval == 0) {
 
                 /* Only switch if successful */
-                gtk_toggle_button_set_active(ctrl->config3On, FALSE);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config3On), FALSE);
                 gtk_widget_set_sensitive(button, FALSE);
                 gtk_widget_set_sensitive(ctrl->config3On, TRUE);
                 
@@ -881,7 +862,7 @@ static void config3Off_toggle_cb(GtkToggleButton * button, gpointer data)
  * \param button Pointer to the GtkToggle button.
  * \param data Pointer to the GtkStnCtrl widget.
  */
-static void config4On_toggle_cb(GtkToggleButton * button, gpointer data)
+static void config4On_toggle_cb(GtkWidget * button, gpointer data)
 {
     GtkStnCtrl    *ctrl = GTK_STN_CTRL(data);
     gchar          *buff;
@@ -889,7 +870,7 @@ static void config4On_toggle_cb(GtkToggleButton * button, gpointer data)
     gboolean        retcode;
     gint            retval;
 
-    if (gtk_toggle_button_get_active(button))
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
     {
         
         /* send command */
@@ -901,7 +882,7 @@ static void config4On_toggle_cb(GtkToggleButton * button, gpointer data)
             if (retval == 0) {
 
                 /* Only switch if successful */
-                gtk_toggle_button_set_active(ctrl->config4Off, FALSE);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config4Off), FALSE);
                 gtk_widget_set_sensitive(button, FALSE);
                 gtk_widget_set_sensitive(ctrl->config4Off, TRUE);
             } else {
@@ -924,7 +905,7 @@ static void config4On_toggle_cb(GtkToggleButton * button, gpointer data)
  * \param button Pointer to the GtkToggle button.
  * \param data Pointer to the GtkStnCtrl widget.
  */
-static void config4Off_toggle_cb(GtkToggleButton * button, gpointer data)
+static void config4Off_toggle_cb(GtkWidget * button, gpointer data)
 {
     GtkStnCtrl    *ctrl = GTK_STN_CTRL(data);
     gchar          *buff;
@@ -932,7 +913,7 @@ static void config4Off_toggle_cb(GtkToggleButton * button, gpointer data)
     gboolean        retcode;
     gint            retval;
 
-    if (gtk_toggle_button_get_active(button))
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
     {
         
         /* send command */
@@ -944,7 +925,7 @@ static void config4Off_toggle_cb(GtkToggleButton * button, gpointer data)
             if (retval == 0) {
 
                 /* Only switch if successful */
-                gtk_toggle_button_set_active(ctrl->config4On, FALSE);
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config4On), FALSE);
                 gtk_widget_set_sensitive(button, FALSE);
                 gtk_widget_set_sensitive(ctrl->config4On, TRUE);
                 
@@ -1242,54 +1223,50 @@ static void util6_toggle_cb(GtkToggleButton * button, gpointer data)
  * the satellite data has been updated. The function updates the internal state
  * of the controller and the station.
  */
-void gtk_stn_ctrl_update(GtkStnCtrl * ctrl, gdouble t)
+void gtk_stn_ctrl_update(GtkStnCtrl * ctrl)
 {
 
-    gchar          *buff;
-    gchar           buffback[128];
-    gboolean        retcode;
     gboolean        state;
-    gint            retval;
 
     if (ctrl->connected) {
         /* Read coil for Utils */
         state = coil_read(ctrl, ctrl->conf->util1);
-        gtk_toggle_button_set_active(ctrl->util1, state);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->util1), state);
         state = coil_read(ctrl, ctrl->conf->util2);
-        gtk_toggle_button_set_active(ctrl->util2, state);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->util2), state);
         state = coil_read(ctrl, ctrl->conf->util3);
-        gtk_toggle_button_set_active(ctrl->util3, state);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->util3), state);
         state = coil_read(ctrl, ctrl->conf->util4);
-        gtk_toggle_button_set_active(ctrl->util4, state);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->util4), state);
         state = coil_read(ctrl, ctrl->conf->util5);
-        gtk_toggle_button_set_active(ctrl->util5, state);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->util5), state);
         state = coil_read(ctrl, ctrl->conf->util6);
-        gtk_toggle_button_set_active(ctrl->util6, state);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->util6), state);
 
         /* Update config states */
         state = coil_read(ctrl, ctrl->conf->config1);
         if (state) {
-            gtk_toggle_button_set_active(ctrl->config1On, state);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config1On), state);
         } else {
-            gtk_toggle_button_set_active(ctrl->config1Off, !state);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config1Off), !state);
         }
         state = coil_read(ctrl, ctrl->conf->config2);
         if (state) {
-            gtk_toggle_button_set_active(ctrl->config2On, state);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config2On), state);
         } else {
-            gtk_toggle_button_set_active(ctrl->config2Off, !state);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config2Off), !state);
         }
         state = coil_read(ctrl, ctrl->conf->config3);
         if (state) {
-            gtk_toggle_button_set_active(ctrl->config3On, state);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config3On), state);
         } else {
-            gtk_toggle_button_set_active(ctrl->config3Off, !state);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config3Off), !state);
         }
         state = coil_read(ctrl, ctrl->conf->config4);
         if (state) {
-            gtk_toggle_button_set_active(ctrl->config4On, state);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config4On), state);
         } else {
-            gtk_toggle_button_set_active(ctrl->config4Off, !state);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(ctrl->config4Off), !state);
         }
     }
     
@@ -1339,10 +1316,11 @@ static void gtk_stn_ctrl_init(GtkStnCtrl * ctrl)
 {
 
     ctrl->connected = FALSE;
-    ctrl->conf = NULL;
+    //ctrl->conf = NULL;
     ctrl->timerid = 0;
 
     g_mutex_init(&ctrl->client.mutex);
+    ctrl->client.timer = NULL;
     ctrl->client.thread = NULL;
     ctrl->client.socket = -1;
     ctrl->client.running = FALSE;    
@@ -1355,6 +1333,7 @@ static void gtk_stn_ctrl_destroy(GtkWidget * widget)
     if (ctrl->timerid > 0)
     {
         g_source_remove(ctrl->timerid);
+        ctrl->timerid = 0;
     }
 
     /* free configuration */
@@ -1424,7 +1403,6 @@ static GtkWidget *create_settings(GtkStnCtrl * ctrl) {
     gchar         **vbuff;
     const gchar    *filename;   /* file name */
     gchar          *stnname;
-    station_conf_t *conf = NULL;
 
     ctrl->conf = g_try_new(station_conf_t, 1);
     table = gtk_grid_new();
@@ -1526,7 +1504,6 @@ static GtkWidget *create_monitor(GtkStnCtrl * ctrl)
     GtkWidget *frame, *table;
     GtkWidget *ana1_label, *ana2_label;
     GtkWidget *dig1_label, *dig2_label, *dig3_label;
-    GtkWidget *dig1_val, *dig2_val, *dig3_val;
     gint a_row = 0;
     gint a_col = 0;
     gint d_row = 0;
@@ -1767,7 +1744,7 @@ static GtkWidget *create_utils(GtkStnCtrl * ctrl)
 }
 
 
-GtkWidget      *gtk_stn_ctrl_new(GtkSatModule * module)
+GtkWidget      *gtk_stn_ctrl_new()
 {
     GtkStnCtrl     *stn_ctrl;
     GtkWidget      *table;

@@ -1053,7 +1053,7 @@ static void stnctrl_cb(GtkWidget * menuitem, gpointer data)
         return;
     }
 
-    module->stnctrl = gtk_stn_ctrl_new(module);
+    module->stnctrl = gtk_stn_ctrl_new();
 
     if (module->stnctrl == NULL)
     {

@@ -617,8 +617,9 @@ gtk-stn-ctrl.o: gtk-stn-ctrl.c /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/bits/in.h \
  /usr/include/x86_64-linux-gnu/bits/byteswap.h \
  /usr/include/x86_64-linux-gnu/bits/byteswap-16.h /usr/include/netdb.h \
- /usr/include/x86_64-linux-gnu/bits/netdb.h gtk-stn-ctrl.h \
- gtk-sat-module.h qth-data.h sgpsdp/sgp4sdp4.h /usr/include/stdlib.h \
+ /usr/include/x86_64-linux-gnu/bits/netdb.h compat.h gpredict-utils.h \
+ gtk-stn-ctrl.h gtk-sat-module.h qth-data.h sgpsdp/sgp4sdp4.h \
+ /usr/include/stdlib.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib.h gtk-sat-data.h \
@@ -1977,6 +1978,10 @@ gtk-stn-ctrl.o: gtk-stn-ctrl.c /usr/include/stdc-predef.h \
 /usr/include/netdb.h:
 
 /usr/include/x86_64-linux-gnu/bits/netdb.h:
+
+compat.h:
+
+gpredict-utils.h:
 
 gtk-stn-ctrl.h:
 

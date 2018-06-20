@@ -64,8 +64,6 @@
 #include "sat-cfg.h"
 #include "sat-log.h"
 
-/* Delete when finished debugging */
-#include "gtk-rig-ctrl.h"
 
 extern GtkWidget *app;
 
@@ -598,11 +596,6 @@ void mod_mgr_reload_sats()
     {
  
         mod = GTK_SAT_MODULE(g_slist_nth_data(modules, i));
-        if (mod->rigctrl)
-        {
-            GtkRigCtrl *rig = GTK_RIG_CTRL(mod->rigctrl);
-            sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Rig->target catnum here is %d"), __func__, rig->target->tle.catnr);
-        }
         gtk_sat_module_reload_sats(mod);
          
     }

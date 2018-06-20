@@ -601,8 +601,7 @@ mod-mgr.o: mod-mgr.c /usr/include/stdc-predef.h ../build-config.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-bsearch.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib.h gtk-sat-data.h \
- gtk-sat-module-popup.h mod-cfg.h mod-mgr.h sat-cfg.h sat-log.h \
- gtk-rig-ctrl.h predict-tools.h sat-vis.h radio-conf.h trsp-conf.h
+ gtk-sat-module-popup.h mod-cfg.h mod-mgr.h sat-cfg.h sat-log.h
 
 /usr/include/stdc-predef.h:
 
@@ -1933,13 +1932,3 @@ mod-mgr.h:
 sat-cfg.h:
 
 sat-log.h:
-
-gtk-rig-ctrl.h:
-
-predict-tools.h:
-
-sat-vis.h:
-
-radio-conf.h:
-
-trsp-conf.h:

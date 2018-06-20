@@ -77,6 +77,8 @@ static void     exec_dual_rig_cycle(GtkRigCtrl * ctrl);
 static gboolean check_aos_los(GtkRigCtrl * ctrl);
 static gboolean set_freq_simplex(GtkRigCtrl * ctrl, gint sock, gdouble freq);
 static gboolean get_freq_simplex(GtkRigCtrl * ctrl, gint sock, gdouble * freq);
+static gboolean set_pass_simplex(GtkRigCtrl * ctrl, gint sock);
+static gboolean set_doppler_simplex(GtkRigCtrl * ctrl, gint sock, gdouble freq, gdouble dd);
 static gboolean set_freq_toggle(GtkRigCtrl * ctrl, gint sock, gdouble freq);
 static gboolean set_toggle(GtkRigCtrl * ctrl, gint sock);
 static gboolean unset_toggle(GtkRigCtrl * ctrl, gint sock);
@@ -1624,6 +1626,7 @@ static void exec_rx_cycle(GtkRigCtrl * ctrl)
     satfrequ = gtk_freq_knob_get_value(GTK_FREQ_KNOB(ctrl->SatFreqUp));
     if (ctrl->tracking)
     {
+
         /* downlink */
         gtk_freq_knob_set_value(GTK_FREQ_KNOB(ctrl->RigFreqDown),
                                 satfreqd + ctrl->dd - ctrl->conf->lo);
@@ -1645,6 +1648,20 @@ static void exec_rx_cycle(GtkRigCtrl * ctrl)
     if ((ctrl->engaged) && (ptt == FALSE) &&
         (fabs(ctrl->lastrxf - tmpfreq) >= 1.0))
     {
+
+        /* Let compatible rig know if we are in a pass */
+        if (set_pass_simplex(ctrl, ctrl->sock))
+        {
+            /* If there is an error, rig is likely not compatible. This is OK */
+            ctrl->errcnt = 0;
+        }
+
+        if (set_doppler_simplex(ctrl, ctrl->sock, tmpfreq, ctrl->dd))
+        {
+            /* If there is an error, rig is likely not compatible. This is OK */
+            ctrl->errcnt = 0;
+        }
+
         if (set_freq_simplex(ctrl, ctrl->sock, tmpfreq))
         {
             /* reset error counter */
@@ -2338,6 +2355,52 @@ static gboolean check_aos_los(GtkRigCtrl * ctrl)
     ctrl->prev_ele = ctrl->target->el;
 
     return retcode;
+}
+
+/*
+ * Set pass in simplex mode
+ *
+ * Returns TRUE if the operation was successful, FALSE otherwise
+ */
+static gboolean set_pass_simplex(GtkRigCtrl * ctrl, gint sock)
+{
+    gchar          *buff;
+    gchar           buffback[128];
+    gboolean        retcode;
+
+    if (ctrl->target->el < 0.0)
+    {
+        /* We are not in a pass */
+        buff = g_strdup("5 0\x0a");
+
+    } else {
+        buff = g_strdup("5 1\x0a");
+    }
+
+    retcode = send_rigctld_command(ctrl, sock, buff, buffback, 128);
+    g_free(buff);
+
+
+    return (check_set_response(buffback, retcode, __func__));
+}
+
+/*
+ * Set doppler in simplex mode
+ *
+ * Returns TRUE if the operation was successful, FALSE otherwise
+ */
+static gboolean set_doppler_simplex(GtkRigCtrl * ctrl, gint sock, gdouble freq, gdouble dd)
+{
+    gchar          *buff;
+    gchar           buffback[128];
+    gboolean        retcode;
+
+    buff = g_strdup_printf("6 %10.0f %10.0f\x0a", freq-dd, dd);
+    retcode = send_rigctld_command(ctrl, sock, buff, buffback, 128);
+    g_free(buff);
+
+
+    return (check_set_response(buffback, retcode, __func__));
 }
 
 /*

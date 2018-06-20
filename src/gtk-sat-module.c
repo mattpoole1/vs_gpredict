@@ -1079,7 +1079,7 @@ static gboolean gtk_sat_module_timeout_cb(gpointer module)
         if (mod->rotctrl)
             gtk_rot_ctrl_update(GTK_ROT_CTRL(mod->rotctrl), mod->tmgCdnum);
         if (mod->stnctrl)
-            gtk_stn_ctrl_update(GTK_STN_CTRL(mod->stnctrl), mod->tmgCdnum);
+            gtk_stn_ctrl_update(GTK_STN_CTRL(mod->stnctrl));
 
         /* check and update Sky at glance */
         /* FIXME: We should have some timeout counter to ensure that we don't

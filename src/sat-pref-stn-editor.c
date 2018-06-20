@@ -139,6 +139,7 @@ static void update_widgets(station_conf_t * conf)
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(ana2), conf->ana2);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(dig1), conf->dig1);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(dig2), conf->dig2);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(dig3), conf->dig3);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(config1), conf->config1);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(config2), conf->config2);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(config3), conf->config3);
@@ -185,6 +186,7 @@ static void clear_widgets()
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(ana2), 0);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(dig1), 0);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(dig2), 0);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(dig3), 0);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(config1), 0);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(config2), 0);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(config3), 0);
