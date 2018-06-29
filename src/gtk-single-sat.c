@@ -385,6 +385,8 @@ static void store_sats(gpointer key, gpointer value, gpointer user_data)
 
     (void)key;
 
+    sat_log_log(SAT_LOG_LEVEL_WARN, _("%s: Loading sat %s into single sat list"), __func__, sat->name);
+
     single_sat->sats = g_slist_insert_sorted(single_sat->sats, sat,
                                              (GCompareFunc) sat_name_compare);
 }

@@ -174,6 +174,20 @@ static gboolean stnctld_socket_rw(gint sock, gchar * buff, gchar * buffout,
     return TRUE;
 }
 
+static gboolean write_coil(GtkStnCtrl * ctrl, gint relay, gint val)
+{
+    gchar *buff;
+    gchar  buffback[128];
+    gboolean retcode;
+    
+    buff = g_strdup_printf("s%d %d\x0a", relay, val);
+    retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
+    g_free(buff);
+
+    return retcode;
+}
+
+
 static gboolean analog_read(GtkStnCtrl * ctrl, gint a_num, gdouble * ana)
 {
     gchar          *buff, **vbuff;
@@ -613,9 +627,12 @@ static void config1On_toggle_cb(GtkWidget * button, gpointer data)
     {
         
         /* send command */
+        retcode = write_coil(ctrl, ctrl->conf->config1, 1);
+        /*
         buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config1, 1);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
         g_free(buff);
+        */
         if (retcode) {
             retval = (gint) g_strtod(buffback + 4, NULL);
             if (retval == 0) {
@@ -656,9 +673,10 @@ static void config1Off_toggle_cb(GtkWidget * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config1, 0);
+        retcode = write_coil(ctrl, ctrl->conf->config1, 0);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config1, 0);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
         if (retcode) {
             retval = (gint) g_strtod(buffback + 4, NULL);
             if (retval == 0) {
@@ -700,9 +718,10 @@ static void config2On_toggle_cb(GtkWidget * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config2, 1);
+        retcode = write_coil(ctrl, ctrl->conf->config2, 1);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config2, 1);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
         if (retcode) {
             retval = (gint) g_strtod(buffback + 4, NULL);
             if (retval == 0) {
@@ -743,9 +762,10 @@ static void config2Off_toggle_cb(GtkWidget * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config2, 0);
+        retcode = write_coil(ctrl, ctrl->conf->config2, 0);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config2, 0);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
         if (retcode) {
             retval = (gint) g_strtod(buffback + 4, NULL);
             if (retval == 0) {
@@ -787,9 +807,10 @@ static void config3On_toggle_cb(GtkWidget * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config3, 1);
+        retcode = write_coil(ctrl, ctrl->conf->config3, 1);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config3, 1);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
         if (retcode) {
             retval = (gint) g_strtod(buffback + 4, NULL);
             if (retval == 0) {
@@ -830,9 +851,10 @@ static void config3Off_toggle_cb(GtkWidget * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config3, 0);
+        retcode = write_coil(ctrl, ctrl->conf->config3, 0);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config3, 0);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
         if (retcode) {
             retval = (gint) g_strtod(buffback + 4, NULL);
             if (retval == 0) {
@@ -874,9 +896,10 @@ static void config4On_toggle_cb(GtkWidget * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config4, 1);
+        retcode = write_coil(ctrl, ctrl->conf->config4, 1);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config4, 1);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
         if (retcode) {
             retval = (gint) g_strtod(buffback + 4, NULL);
             if (retval == 0) {
@@ -917,9 +940,10 @@ static void config4Off_toggle_cb(GtkWidget * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config4, 0);
+        retcode = write_coil(ctrl, ctrl->conf->config4, 0);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->config4, 0);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
         if (retcode) {
             retval = (gint) g_strtod(buffback + 4, NULL);
             if (retval == 0) {
@@ -960,15 +984,17 @@ static void util1_toggle_cb(GtkToggleButton * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util1, 1);
+        retcode = write_coil(ctrl, ctrl->conf->util1, 1);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util1, 1);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
     } else {
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util1, 0);
+        retcode = write_coil(ctrl, ctrl->conf->util1, 0);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util1, 0);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
 
     sat_log_log(SAT_LOG_LEVEL_DEBUG,
@@ -1004,15 +1030,17 @@ static void util2_toggle_cb(GtkToggleButton * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util2, 1);
+        retcode = write_coil(ctrl, ctrl->conf->util2, 1);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util2, 1);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
     } else {
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util2, 0);
+        retcode = write_coil(ctrl, ctrl->conf->util2, 0);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util2, 0);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
 
     sat_log_log(SAT_LOG_LEVEL_DEBUG,
@@ -1050,15 +1078,17 @@ static void util3_toggle_cb(GtkToggleButton * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util3, 1);
+        retcode = write_coil(ctrl, ctrl->conf->util3, 1);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util3, 1);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
     } else {
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util3, 0);
+        retcode = write_coil(ctrl, ctrl->conf->util3, 0);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util3, 0);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
 
     sat_log_log(SAT_LOG_LEVEL_DEBUG,
@@ -1096,15 +1126,17 @@ static void util4_toggle_cb(GtkToggleButton * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util4, 1);
+        retcode = write_coil(ctrl, ctrl->conf->util4, 1);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util4, 1);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
     } else {
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util4, 0);
+        retcode = write_coil(ctrl, ctrl->conf->util4, 0);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util4, 0);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
 
     sat_log_log(SAT_LOG_LEVEL_DEBUG,
@@ -1142,15 +1174,17 @@ static void util5_toggle_cb(GtkToggleButton * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util5, 1);
+        retcode = write_coil(ctrl, ctrl->conf->util5, 1);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util5, 1);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
     } else {
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util5, 0);
+        retcode = write_coil(ctrl, ctrl->conf->util5, 0);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util5, 0);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
 
     sat_log_log(SAT_LOG_LEVEL_DEBUG,
@@ -1188,15 +1222,17 @@ static void util6_toggle_cb(GtkToggleButton * button, gpointer data)
     {
         
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util6, 1);
+        retcode = write_coil(ctrl, ctrl->conf->util6, 1);
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util6, 1);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
     } else {
         /* send command */
-        buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util6, 0);
+        retcode = write_coil(ctrl, ctrl->conf->util6, 0);        
+        /*buff = g_strdup_printf("s%d %d\x0a", ctrl->conf->util6, 0);
         retcode = stnctld_socket_rw(ctrl->client.socket, buff, buffback, 128);
-        g_free(buff);
+        g_free(buff);*/
 
 
     sat_log_log(SAT_LOG_LEVEL_DEBUG,

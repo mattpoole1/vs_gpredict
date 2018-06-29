@@ -1428,6 +1428,12 @@ void gtk_sat_module_config_cb(GtkWidget * button, gpointer data)
             }
             else
             {
+
+                sat_log_log(SAT_LOG_LEVEL_WARN,
+                            _
+                            ("%s: Everything OK."),
+                            __func__);
+
                 /* store state and size */
                 laststate = module->state;
                 gtk_widget_get_allocation(GTK_WIDGET(module), &alloc);
@@ -1664,6 +1670,11 @@ void gtk_sat_module_reload_sats(GtkSatModule * module)
 {
     GtkWidget      *child;
     guint           i;
+    gchar          *name = module->name;
+    gtk_sat_mod_state_t laststate;
+    GtkAllocation   alloc;
+    gchar          *cfgfile;
+    gint            w, h;
 
     g_return_if_fail(IS_GTK_SAT_MODULE(module));
 
@@ -1709,6 +1720,81 @@ void gtk_sat_module_reload_sats(GtkSatModule * module)
 
     /* unlock module */
     g_mutex_unlock(&module->busy);
+
+    /* Update module views */
+
+    laststate = module->state;
+    gtk_widget_get_allocation(GTK_WIDGET(module), &alloc);
+    w = alloc.width;
+    h = alloc.height;
+    gtk_sat_module_close_cb(NULL, module);
+    gchar *confdir = get_modules_dir();
+    cfgfile = g_strconcat(confdir, G_DIR_SEPARATOR_S, name, ".mod", NULL);
+    g_free(confdir);
+    module = GTK_SAT_MODULE(gtk_sat_module_new(cfgfile));
+    module->state = laststate;
+    switch (laststate)
+    {
+        case GTK_SAT_MOD_STATE_DOCKED:
+
+            /* re-open module by adding it to the mod-mgr */
+            mod_mgr_add_module(GTK_WIDGET(module), TRUE);
+
+            break;
+
+        case GTK_SAT_MOD_STATE_WINDOW:
+
+            /* add to module manager */
+            mod_mgr_add_module(GTK_WIDGET(module), FALSE);
+
+            /* create window */
+            module->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+            gtk_window_set_title(GTK_WINDOW(module->win),
+                                         module->name);
+            gtk_window_set_default_size(GTK_WINDOW(module->win), w, h);
+
+            /** FIXME: window icon and such */
+
+            /* add module to window */
+            gtk_container_add(GTK_CONTAINER(module->win),
+                                      GTK_WIDGET(module));
+
+            /* show window */
+            gtk_widget_show_all(module->win);
+
+            break;
+
+        case GTK_SAT_MOD_STATE_FULLSCREEN:
+
+            /* add to module manager */
+            mod_mgr_add_module(GTK_WIDGET(module), FALSE);
+            /* create window */
+            module->win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+            gtk_window_set_title(GTK_WINDOW(module->win),
+                                         module->name);
+            gtk_window_set_default_size(GTK_WINDOW(module->win), w, h);
+
+            /** FIXME: window icon and such */
+
+            /* add module to window */
+            gtk_container_add(GTK_CONTAINER(module->win),
+                                      GTK_WIDGET(module));
+            /* show window */
+            gtk_widget_show_all(module->win);
+
+            gtk_window_fullscreen(GTK_WINDOW(module->win));
+
+            break;
+
+        default:
+            sat_log_log(SAT_LOG_LEVEL_ERROR,
+                                _("%s: Module %s has unknown state: %d"),
+                                __func__, name, module->state);
+            break;
+    }
+
+    g_free(cfgfile);
+
 }
 
 /** Select a new satellite */

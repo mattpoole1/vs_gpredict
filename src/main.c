@@ -443,7 +443,7 @@ static gboolean tle_mon_task(gpointer data)
         break;
 
     case TLE_AUTO_UPDATE_DAILY:
-        thrld = 10;
+        thrld = 86400;
         break;
 
         /* set default to "infinite" */
